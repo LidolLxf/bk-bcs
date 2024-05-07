@@ -144,3 +144,15 @@ func (p *Federation) GetClusterDiskioTotal(ctx context.Context, projectID, clust
 	step time.Duration) ([]*prompb.TimeSeries, error) {
 	return nil, nil
 }
+
+// GetClusterGroupNodeNum 集群节点池数目
+func (p *Federation) GetClusterGroupNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}
+
+// GetClusterGroupMaxNodeNum 集群最大节点池数目
+func (p *Federation) GetClusterGroupMaxNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}

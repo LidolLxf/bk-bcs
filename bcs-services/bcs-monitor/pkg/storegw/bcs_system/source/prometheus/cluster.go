@@ -301,3 +301,22 @@ func (m *Prometheus) GetClusterDiskioTotal(ctx context.Context, projectID, clust
 
 	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
 }
+
+// GetClusterGroupNodeNum 集群节点池数目
+func (m *Prometheus) GetClusterGroupNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	promql :=
+		`bkbcs_clustermanager_cluster_group_nodeNum{cluster_id="%<clusterID>s", instance=~"%<instance>s", %<provider>s}`
+
+	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
+}
+
+// GetClusterGroupMaxNodeNum 集群最大节点池数目
+func (m *Prometheus) GetClusterGroupMaxNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	promql :=
+		`bkbcs_clustermanager_cluster_group_maxNodeNum{cluster_id="%<clusterID>s", ` +
+			`instance=~"%<instance>s", %<provider>s}`
+
+	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
+}

@@ -249,3 +249,15 @@ func (m *VCluster) GetClusterPodUsage(ctx context.Context, projectID, clusterID 
 	}
 	return base.DivideSeriesByValue(usedSeries, float64(cluster.NetworkSettings.MaxNodePodNum)), nil
 }
+
+// GetClusterGroupNodeNum 集群节点池数目
+func (m *VCluster) GetClusterGroupNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}
+
+// GetClusterGroupMaxNodeNum 集群最大节点池数目
+func (m *VCluster) GetClusterGroupMaxNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}

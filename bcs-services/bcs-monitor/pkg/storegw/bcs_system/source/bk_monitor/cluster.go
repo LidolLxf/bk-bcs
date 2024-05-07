@@ -368,3 +368,21 @@ func (m *BKMonitor) GetClusterDiskioTotal(ctx context.Context, projectID, cluste
 
 	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
 }
+
+// GetClusterGroupNodeNum 集群节点池数目
+func (m *BKMonitor) GetClusterGroupNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	promql :=
+		`bkbcs_clustermanager_cluster_group_nodeNum{%<cluster>s, instance=~"%<instance>s", %<provider>s}`
+
+	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
+}
+
+// GetClusterGroupMaxNodeNum 集群最大节点池数目
+func (m *BKMonitor) GetClusterGroupMaxNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	promql :=
+		`bkbcs_clustermanager_cluster_group_maxNodeNum{%<cluster>s, instance=~"%<instance>s", %<provider>s}`
+
+	return m.handleClusterMetric(ctx, projectID, clusterID, promql, start, end, step)
+}

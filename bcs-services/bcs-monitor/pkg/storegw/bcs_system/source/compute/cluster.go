@@ -142,3 +142,15 @@ func (p *Compute) GetClusterPodUsage(ctx context.Context, projectID, clusterID s
 	step time.Duration) ([]*prompb.TimeSeries, error) {
 	return nil, nil
 }
+
+// GetClusterGroupNodeNum 集群节点池数目
+func (p *Compute) GetClusterGroupNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}
+
+// GetClusterGroupMaxNodeNum 集群最大节点池数目
+func (p *Compute) GetClusterGroupMaxNodeNum(ctx context.Context, projectID, clusterID string, start, end time.Time,
+	step time.Duration) ([]*prompb.TimeSeries, error) {
+	return nil, nil
+}
