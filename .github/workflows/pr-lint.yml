@@ -6,7 +6,7 @@ jobs:
     steps:
       - name: Check PR naming convention
         run: |
-          title=$(echo "${{ github.event.pull_request.title }}" | awk '{$1=$1};1')
+          title=$(echo "${{ github.event.pull_request.title }}")
           pattern="^(feat|fix|docs|style|refactor|perf|test|chore|revert|build|ci): .*"
           if [[ ! $title =~ $pattern ]]; then
             echo "PR title does not match naming convention. Example: 'feat: 添加新功能'"
