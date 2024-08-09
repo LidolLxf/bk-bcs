@@ -1153,6 +1153,10 @@ message CreateAppReq {
   string alias = 5;
   string data_type = 6;  // data_type is enum type, source resource reference:
                          // pkg/dal/table/app.go
+  bool is_approve = 7;
+  string approve_type = 8;  // approve_type is enum type, source resource reference:
+                            // pkg/dal/table/app.go
+  string approver = 9;
 }
 
 message CreateAppResp {
@@ -1166,6 +1170,9 @@ message UpdateAppReq {
   string memo = 4;
   string alias = 5;
   string data_type = 6;
+  bool is_approve = 7;
+  string approve_type = 8;
+  string approver = 9;
 }
 
 message DeleteAppReq {

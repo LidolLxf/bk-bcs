@@ -130,10 +130,13 @@ type AppSpec struct {
 	Name string `json:"name" gorm:"column:name"`
 	// ConfigType defines which type is this configuration, different type has the
 	// different ways to be consumed.
-	ConfigType ConfigType `json:"config_type" gorm:"column:config_type"`
-	Memo       string     `json:"memo" gorm:"column:memo"`
-	Alias      string     `json:"alias" gorm:"alias"`
-	DataType   DataType   `json:"data_type" gorm:"data_type"`
+	ConfigType  ConfigType  `json:"config_type" gorm:"column:config_type"`
+	Memo        string      `json:"memo" gorm:"column:memo"`
+	Alias       string      `json:"alias" gorm:"alias"`
+	DataType    DataType    `json:"data_type" gorm:"data_type"`
+	ApproveType ApproveType `json:"approve_type" gorm:"approve_type"`
+	IsApprove   bool        `json:"is_approve" gorm:"is_approve"`
+	Approver    string      `json:"approver" gorm:"approver"`
 }
 
 // ValidateCreate validate spec when created.
@@ -155,6 +158,10 @@ func (as *AppSpec) ValidateCreate() error {
 	}
 
 	if err := validator.ValidateMemo(as.Memo, false); err != nil {
+		return err
+	}
+
+	if err := as.ApproveType.ValidateApproveType(); err != nil {
 		return err
 	}
 
@@ -298,6 +305,28 @@ func (k DataType) ValidateApp() error {
 	case KvXml:
 	default:
 		return errors.New("invalid data-type")
+	}
+	return nil
+}
+
+// ApproveType is the app's config approval type
+type ApproveType string
+
+const (
+	// CountSign counter sign
+	CountSign ApproveType = "CountSign"
+	// OrSign or sign
+	OrSign ApproveType = "OrSign"
+)
+
+// ValidateApproveType validate approve type
+func (a ApproveType) ValidateApproveType() error {
+	switch a {
+	case CountSign:
+	case OrSign:
+	case "":
+	default:
+		return fmt.Errorf("unsupported approve type: %s", a)
 	}
 	return nil
 }

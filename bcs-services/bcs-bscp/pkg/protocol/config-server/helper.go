@@ -14,6 +14,8 @@
 package pbcs
 
 import (
+	"errors"
+
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/validator"
 )
 
@@ -21,6 +23,10 @@ import (
 func (r *CreateAppReq) Validate() error {
 	if err := validator.ValidateAppName(r.Name); err != nil {
 		return err
+	}
+
+	if r.IsApprove && (r.ApproveType == "" || r.Approver == "") {
+		return errors.New("approve_type or approver cannot be empty")
 	}
 	return nil
 }
