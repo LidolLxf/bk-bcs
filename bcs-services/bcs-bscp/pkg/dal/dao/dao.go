@@ -67,6 +67,7 @@ type Set interface {
 	CredentialScope() CredentialScope
 	Kv() Kv
 	ReleasedKv() ReleasedKv
+	Strategy() Strategy
 	Client() Client
 	ClientEvent() ClientEvent
 	ClientQuery() ClientQuery
@@ -457,6 +458,15 @@ func (s *set) Kv() Kv {
 // ReleasedKv returns the ReleasedKv scope's DAO
 func (s *set) ReleasedKv() ReleasedKv {
 	return &releasedKvDao{
+		idGen:    s.idGen,
+		auditDao: s.auditDao,
+		genQ:     s.genQ,
+	}
+}
+
+// Strategy returns the Strategy
+func (s *set) Strategy() Strategy {
+	return &strategyDao{
 		idGen:    s.idGen,
 		auditDao: s.auditDao,
 		genQ:     s.genQ,

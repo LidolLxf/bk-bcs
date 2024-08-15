@@ -130,6 +130,126 @@ func (s *Service) Publish(ctx context.Context, req *pbds.PublishReq) (*pbds.Publ
 	return resp, nil
 }
 
+// SubmitPublishApprove submit publish strategy.
+// nolint: funlen
+func (s *Service) SubmitPublishApprove(
+	ctx context.Context, req *pbds.SubmitPublishApproveReq) (*pbds.PublishResp, error) {
+	grpcKit := kit.FromGrpcContext(ctx)
+
+	groupIDs := make([]uint32, 0)
+	tx := s.dao.GenQuery().Begin()
+
+	app, err := s.dao.App().Get(grpcKit, req.BizId, req.AppId)
+	if err != nil {
+		return nil, err
+	}
+
+	release, err := s.dao.Release().Get(grpcKit, req.BizId, req.AppId, req.ReleaseId)
+	if err != nil {
+		return nil, err
+	}
+	if release.Spec.Deprecated {
+		return nil, fmt.Errorf("release %s is deprecated, can not be submited", release.Spec.Name)
+	}
+
+	if !req.All {
+		if req.GrayPublishMode == "" {
+			// !NOTE: Compatible with previous pipelined plugins version
+			req.GrayPublishMode = table.PublishByGroups.String()
+		}
+		publishMode := table.GrayPublishMode(req.GrayPublishMode)
+		if e := publishMode.Validate(); e != nil {
+			if rErr := tx.Rollback(); rErr != nil {
+				logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+			}
+			return nil, e
+		}
+		// validate and query group ids.
+		if publishMode == table.PublishByGroups {
+			for _, groupID := range req.Groups {
+				if groupID == 0 {
+					groupIDs = append(groupIDs, groupID)
+					continue
+				}
+				group, e := s.dao.Group().Get(grpcKit, groupID, req.BizId)
+				if e != nil {
+					if rErr := tx.Rollback(); rErr != nil {
+						logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+					}
+					return nil, fmt.Errorf("group %d not exist", groupID)
+				}
+				groupIDs = append(groupIDs, group.ID)
+			}
+		}
+		if publishMode == table.PublishByLabels {
+			groupID, gErr := s.getOrCreateGroupByLabels(grpcKit, tx, req.BizId, req.AppId, req.GroupName, req.Labels)
+			if gErr != nil {
+				logs.Errorf("create group by labels failed, err: %v, rid: %s", gErr, grpcKit.Rid)
+				if rErr := tx.Rollback(); rErr != nil {
+					logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+				}
+				return nil, gErr
+			}
+			groupIDs = append(groupIDs, groupID)
+		}
+	}
+
+	opt := &types.PublishOption{
+		BizID:     req.BizId,
+		AppID:     req.AppId,
+		ReleaseID: req.ReleaseId,
+		All:       req.All,
+		Default:   req.Default,
+		Memo:      req.Memo,
+		Groups:    groupIDs,
+		Revision: &table.CreatedRevision{
+			Creator: grpcKit.User,
+		},
+		PublishType:   table.PublishType(req.PublishType),
+		PublishTime:   req.PublishTime,
+		PublishStatus: table.PublishStatus(req.PublishStatus),
+		Approver:      app.Spec.Approver,
+		PubState:      string(table.Publishing),
+	}
+
+	// if approval required, current approver required, pub_state unpublished
+	if app.Spec.IsApprove {
+		opt.ApproverProgress = app.Spec.Approver
+		opt.PubState = string(table.Unpublished)
+		if app.Spec.ApproveType == table.CountSign {
+			// approver cannot be blank when countersigning
+			approvers := strings.Split(app.Spec.Approver, ",")
+			opt.ApproverProgress = approvers[0]
+		}
+	}
+
+	pshID, err := s.dao.Publish().SubmitWithTx(grpcKit, tx, opt)
+	if err != nil {
+		logs.Errorf("publish strategy failed, err: %v, rid: %s", err, grpcKit.Rid)
+		if rErr := tx.Rollback(); rErr != nil {
+			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+		}
+		return nil, err
+	}
+	haveCredentials, err := s.checkAppHaveCredentials(grpcKit, req.BizId, req.AppId)
+	if err != nil {
+		if rErr := tx.Rollback(); rErr != nil {
+			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+		}
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		logs.Errorf("commit transaction failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
+	resp := &pbds.PublishResp{
+		PublishedStrategyHistoryId: pshID,
+		HaveCredentials:            haveCredentials,
+	}
+	return resp, nil
+}
+
 // checkAppHaveCredentials check if there is available credential for app.
 // 1. credential scope can match app name.
 // 2. credential is enabled.

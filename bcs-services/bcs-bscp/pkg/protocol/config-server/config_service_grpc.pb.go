@@ -14,6 +14,7 @@ import (
 	group "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/group"
 	hook_revision "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/hook-revision"
 	release "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/release"
+	strategy "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/strategy"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -152,6 +153,10 @@ const (
 	Config_ListGroupReleasedApps_FullMethodName             = "/pbcs.Config/ListGroupReleasedApps"
 	Config_GetGroupByName_FullMethodName                    = "/pbcs.Config/GetGroupByName"
 	Config_Publish_FullMethodName                           = "/pbcs.Config/Publish"
+	Config_SubmitPublishApprove_FullMethodName              = "/pbcs.Config/SubmitPublishApprove"
+	Config_GetLastSelect_FullMethodName                     = "/pbcs.Config/GetLastSelect"
+	Config_GetLastPublish_FullMethodName                    = "/pbcs.Config/GetLastPublish"
+	Config_GetReleasesStatus_FullMethodName                 = "/pbcs.Config/GetReleasesStatus"
 	Config_GenerateReleaseAndPublish_FullMethodName         = "/pbcs.Config/GenerateReleaseAndPublish"
 	Config_CreateCredentials_FullMethodName                 = "/pbcs.Config/CreateCredentials"
 	Config_ListCredentials_FullMethodName                   = "/pbcs.Config/ListCredentials"
@@ -272,14 +277,14 @@ type ConfigClient interface {
 	ListTemplateRevisions(ctx context.Context, in *ListTemplateRevisionsReq, opts ...grpc.CallOption) (*ListTemplateRevisionsResp, error)
 	GetTemplateRevision(ctx context.Context, in *GetTemplateRevisionReq, opts ...grpc.CallOption) (*GetTemplateRevisionResp, error)
 	// 暂时不对外开发（删除模版后，服务引用的latest版本会回退到上一个老版本）
-	//rpc DeleteTemplateRevision(DeleteTemplateRevisionReq) returns
-	//(DeleteTemplateRevisionResp) {
+	// rpc DeleteTemplateRevision(DeleteTemplateRevisionReq) returns
+	// (DeleteTemplateRevisionResp) {
 	//
-	//option (google.api.http) = {
-	//delete :
-	//"/api/v1/config/biz/{biz_id}/template_spaces/{template_space_id}/templates/{template_id}/template_revisions/{template_revision_id}"
-	//};
-	//}
+	// option (google.api.http) = {
+	// delete :
+	// "/api/v1/config/biz/{biz_id}/template_spaces/{template_space_id}/templates/{template_id}/template_revisions/{template_revision_id}"
+	// };
+	// }
 	ListTemplateRevisionsByIDs(ctx context.Context, in *ListTemplateRevisionsByIDsReq, opts ...grpc.CallOption) (*ListTemplateRevisionsByIDsResp, error)
 	ListTmplRevisionNamesByTmplIDs(ctx context.Context, in *ListTmplRevisionNamesByTmplIDsReq, opts ...grpc.CallOption) (*ListTmplRevisionNamesByTmplIDsResp, error)
 	CreateTemplateSet(ctx context.Context, in *CreateTemplateSetReq, opts ...grpc.CallOption) (*CreateTemplateSetResp, error)
@@ -335,6 +340,10 @@ type ConfigClient interface {
 	ListGroupReleasedApps(ctx context.Context, in *ListGroupReleasedAppsReq, opts ...grpc.CallOption) (*ListGroupReleasedAppsResp, error)
 	GetGroupByName(ctx context.Context, in *GetGroupByNameReq, opts ...grpc.CallOption) (*group.Group, error)
 	Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishResp, error)
+	SubmitPublishApprove(ctx context.Context, in *SubmitPublishApproveReq, opts ...grpc.CallOption) (*PublishResp, error)
+	GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error)
+	GetLastPublish(ctx context.Context, in *GetLastPublishReq, opts ...grpc.CallOption) (*GetLastPublishResp, error)
+	GetReleasesStatus(ctx context.Context, in *GetReleasesStatusReq, opts ...grpc.CallOption) (*strategy.Strategy, error)
 	GenerateReleaseAndPublish(ctx context.Context, in *GenerateReleaseAndPublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 	CreateCredentials(ctx context.Context, in *CreateCredentialReq, opts ...grpc.CallOption) (*CreateCredentialResp, error)
 	ListCredentials(ctx context.Context, in *ListCredentialsReq, opts ...grpc.CallOption) (*ListCredentialsResp, error)
@@ -1520,6 +1529,42 @@ func (c *configClient) Publish(ctx context.Context, in *PublishReq, opts ...grpc
 	return out, nil
 }
 
+func (c *configClient) SubmitPublishApprove(ctx context.Context, in *SubmitPublishApproveReq, opts ...grpc.CallOption) (*PublishResp, error) {
+	out := new(PublishResp)
+	err := c.cc.Invoke(ctx, Config_SubmitPublishApprove_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configClient) GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error) {
+	out := new(GetLastSelectResp)
+	err := c.cc.Invoke(ctx, Config_GetLastSelect_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configClient) GetLastPublish(ctx context.Context, in *GetLastPublishReq, opts ...grpc.CallOption) (*GetLastPublishResp, error) {
+	out := new(GetLastPublishResp)
+	err := c.cc.Invoke(ctx, Config_GetLastPublish_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *configClient) GetReleasesStatus(ctx context.Context, in *GetReleasesStatusReq, opts ...grpc.CallOption) (*strategy.Strategy, error) {
+	out := new(strategy.Strategy)
+	err := c.cc.Invoke(ctx, Config_GetReleasesStatus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configClient) GenerateReleaseAndPublish(ctx context.Context, in *GenerateReleaseAndPublishReq, opts ...grpc.CallOption) (*PublishResp, error) {
 	out := new(PublishResp)
 	err := c.cc.Invoke(ctx, Config_GenerateReleaseAndPublish_FullMethodName, in, out, opts...)
@@ -1934,14 +1979,14 @@ type ConfigServer interface {
 	ListTemplateRevisions(context.Context, *ListTemplateRevisionsReq) (*ListTemplateRevisionsResp, error)
 	GetTemplateRevision(context.Context, *GetTemplateRevisionReq) (*GetTemplateRevisionResp, error)
 	// 暂时不对外开发（删除模版后，服务引用的latest版本会回退到上一个老版本）
-	//rpc DeleteTemplateRevision(DeleteTemplateRevisionReq) returns
-	//(DeleteTemplateRevisionResp) {
+	// rpc DeleteTemplateRevision(DeleteTemplateRevisionReq) returns
+	// (DeleteTemplateRevisionResp) {
 	//
-	//option (google.api.http) = {
-	//delete :
-	//"/api/v1/config/biz/{biz_id}/template_spaces/{template_space_id}/templates/{template_id}/template_revisions/{template_revision_id}"
-	//};
-	//}
+	// option (google.api.http) = {
+	// delete :
+	// "/api/v1/config/biz/{biz_id}/template_spaces/{template_space_id}/templates/{template_id}/template_revisions/{template_revision_id}"
+	// };
+	// }
 	ListTemplateRevisionsByIDs(context.Context, *ListTemplateRevisionsByIDsReq) (*ListTemplateRevisionsByIDsResp, error)
 	ListTmplRevisionNamesByTmplIDs(context.Context, *ListTmplRevisionNamesByTmplIDsReq) (*ListTmplRevisionNamesByTmplIDsResp, error)
 	CreateTemplateSet(context.Context, *CreateTemplateSetReq) (*CreateTemplateSetResp, error)
@@ -1997,6 +2042,10 @@ type ConfigServer interface {
 	ListGroupReleasedApps(context.Context, *ListGroupReleasedAppsReq) (*ListGroupReleasedAppsResp, error)
 	GetGroupByName(context.Context, *GetGroupByNameReq) (*group.Group, error)
 	Publish(context.Context, *PublishReq) (*PublishResp, error)
+	SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error)
+	GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error)
+	GetLastPublish(context.Context, *GetLastPublishReq) (*GetLastPublishResp, error)
+	GetReleasesStatus(context.Context, *GetReleasesStatusReq) (*strategy.Strategy, error)
 	GenerateReleaseAndPublish(context.Context, *GenerateReleaseAndPublishReq) (*PublishResp, error)
 	CreateCredentials(context.Context, *CreateCredentialReq) (*CreateCredentialResp, error)
 	ListCredentials(context.Context, *ListCredentialsReq) (*ListCredentialsResp, error)
@@ -2421,6 +2470,18 @@ func (UnimplementedConfigServer) GetGroupByName(context.Context, *GetGroupByName
 }
 func (UnimplementedConfigServer) Publish(context.Context, *PublishReq) (*PublishResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Publish not implemented")
+}
+func (UnimplementedConfigServer) SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubmitPublishApprove not implemented")
+}
+func (UnimplementedConfigServer) GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastSelect not implemented")
+}
+func (UnimplementedConfigServer) GetLastPublish(context.Context, *GetLastPublishReq) (*GetLastPublishResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetLastPublish not implemented")
+}
+func (UnimplementedConfigServer) GetReleasesStatus(context.Context, *GetReleasesStatusReq) (*strategy.Strategy, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReleasesStatus not implemented")
 }
 func (UnimplementedConfigServer) GenerateReleaseAndPublish(context.Context, *GenerateReleaseAndPublishReq) (*PublishResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateReleaseAndPublish not implemented")
@@ -4813,6 +4874,78 @@ func _Config_Publish_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Config_SubmitPublishApprove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitPublishApproveReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).SubmitPublishApprove(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_SubmitPublishApprove_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).SubmitPublishApprove(ctx, req.(*SubmitPublishApproveReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Config_GetLastSelect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLastSelectReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).GetLastSelect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_GetLastSelect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).GetLastSelect(ctx, req.(*GetLastSelectReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Config_GetLastPublish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLastPublishReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).GetLastPublish(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_GetLastPublish_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).GetLastPublish(ctx, req.(*GetLastPublishReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Config_GetReleasesStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReleasesStatusReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).GetReleasesStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_GetReleasesStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).GetReleasesStatus(ctx, req.(*GetReleasesStatusReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Config_GenerateReleaseAndPublish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GenerateReleaseAndPublishReq)
 	if err := dec(in); err != nil {
@@ -5989,6 +6122,22 @@ var Config_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Publish",
 			Handler:    _Config_Publish_Handler,
+		},
+		{
+			MethodName: "SubmitPublishApprove",
+			Handler:    _Config_SubmitPublishApprove_Handler,
+		},
+		{
+			MethodName: "GetLastSelect",
+			Handler:    _Config_GetLastSelect_Handler,
+		},
+		{
+			MethodName: "GetLastPublish",
+			Handler:    _Config_GetLastPublish_Handler,
+		},
+		{
+			MethodName: "GetReleasesStatus",
+			Handler:    _Config_GetReleasesStatus_Handler,
 		},
 		{
 			MethodName: "GenerateReleaseAndPublish",

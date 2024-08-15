@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/validator"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/runtime/selector"
@@ -221,8 +222,14 @@ type StrategySpec struct {
 	// 3. if this strategy is set to default strategy and works at namespace mode,
 	//    then its namespace should be the reserved namespace DefaultNamespace(
 	//    'bscp_default_ns')
-	Namespace string `db:"namespace" json:"namespace" gorm:"column:namespace"`
-	Memo      string `db:"memo" json:"memo" gorm:"column:memo"`
+	Namespace        string        `db:"namespace" json:"namespace" gorm:"column:namespace"`
+	Memo             string        `db:"memo" json:"memo" gorm:"column:memo"`
+	PublishType      PublishType   `db:"publish_type" json:"publish_type" gorm:"column:publish_type"`
+	PublishTime      string        `db:"publish_time" json:"publish_time" gorm:"column:publish_time"`
+	PublishStatus    PublishStatus `db:"publish_status" json:"publish_status" gorm:"column:publish_status"`
+	RejectReason     string        `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
+	Approver         string        `db:"approver" json:"approver" approver:"column:approver"`
+	ApproverProgress string        `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
 }
 
 // ValidateCreate validate strategy spec when it is created.
@@ -250,6 +257,51 @@ func (s StrategySpec) ValidateCreate() error {
 		return err
 	}
 
+	if err := s.ValidateSubmitPublishContent(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateSubmitPublishContent validate strategy spec public content when it is submit.
+func (s StrategySpec) ValidateSubmitPublishContent() error {
+	if err := s.PublishType.ValidatePublishType(); err != nil {
+		return err
+	}
+
+	if err := s.PublishStatus.ValidatePublishStatus(); err != nil {
+		return err
+	}
+
+	if s.PublishTime != "" {
+		_, err := time.Parse(time.DateTime, s.PublishTime)
+		if err != nil {
+			return fmt.Errorf("publish time format invalid: %s, err: %s", s.PublishTime, err)
+		}
+	}
+
+	// there are only two status to submit
+	if s.PublishStatus != AlreadyPublish && s.PublishStatus != PendApproval {
+		return fmt.Errorf("publish status could not be create: %s", s.PublishStatus)
+	}
+
+	if s.PublishStatus == AlreadyPublish && s.PublishType != Immediately {
+		return errors.New("already publish only can be immediately")
+	}
+
+	if s.PublishStatus == PendApproval && s.PublishType == Immediately {
+		return errors.New("pend approval cannot be immediately")
+	}
+
+	if s.PublishStatus == RejectedApproval && s.RejectReason == "" {
+		return fmt.Errorf("reject reason is null")
+	}
+
+	// approver required for approval
+	if s.PublishStatus == PendApproval && s.Approver == "" {
+		return fmt.Errorf("approver is null")
+	}
 	return nil
 }
 
@@ -568,5 +620,62 @@ func (s SubScopeSelector) Validate() error {
 		return ErrSelectorByteSizeIsOverMaxLimit
 	}
 
+	return nil
+}
+
+// PublishType defines an app's strategy publish type.
+type PublishType string
+
+const (
+	// Manually means this strategy publish type is manual.
+	Manually PublishType = "Manually"
+	// Automatically means this strategy publish type is automatical.
+	Automatically PublishType = "Automatically"
+	// Periodically means this strategy publish type is periodical.
+	Periodically PublishType = "Periodically"
+	// Immediately means this strategy publish type is immediate.
+	Immediately PublishType = "Immediately"
+)
+
+// ValidatePublishType validate publish type
+func (p PublishType) ValidatePublishType() error {
+	switch p {
+	case Manually:
+	case Automatically:
+	case Periodically:
+	case Immediately:
+	default:
+		return fmt.Errorf("unsupported publish type: %s", p)
+	}
+	return nil
+}
+
+// PublishStatus defines an app's strategy publish status.
+type PublishStatus string
+
+const (
+	// PendApproval means this strategy publish status is pending.
+	PendApproval PublishStatus = "PendApproval"
+	// PendPublish means this strategy publish status is pending.
+	PendPublish PublishStatus = "PendPublish"
+	// RevokedPublish means this strategy publish status is revoked.
+	RevokedPublish PublishStatus = "RevokedPublish"
+	// RejectedApproval means this strategy publish status is rejected.
+	RejectedApproval PublishStatus = "RejectedApproval"
+	// AlreadyPublish means this strategy publish status is already publish.
+	AlreadyPublish PublishStatus = "AlreadyPublish"
+)
+
+// ValidatePublishStatus validate publish status
+func (p PublishStatus) ValidatePublishStatus() error {
+	switch p {
+	case PendApproval:
+	case PendPublish:
+	case RevokedPublish:
+	case RejectedApproval:
+	case AlreadyPublish:
+	default:
+		return fmt.Errorf("unsupported publish status: %s", p)
+	}
 	return nil
 }
