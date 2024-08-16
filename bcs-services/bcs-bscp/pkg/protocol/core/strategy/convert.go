@@ -42,7 +42,8 @@ func (m *StrategySpec) StrategySpec() *table.StrategySpec {
 	}
 }
 
-// PbStrategyState convert table StrategySpec to pb StrategySpec
+// PbStrategySpec convert table StrategySpec to pb StrategySpec
+// nolint revive
 func PbStrategySpec(s *table.StrategySpec) *StrategySpec {
 	if s == nil {
 		return nil

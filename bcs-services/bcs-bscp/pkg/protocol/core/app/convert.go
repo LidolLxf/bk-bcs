@@ -43,14 +43,14 @@ func PbAppSpec(spec *table.AppSpec) *AppSpec { //nolint:revive
 	}
 
 	return &AppSpec{
-		Name:          spec.Name,
-		ConfigType:    string(spec.ConfigType),
-		Memo:          spec.Memo,
-		Alias:         spec.Alias,
-		DataType:      string(spec.DataType),
-		IsApprove:     spec.IsApprove,
-		ApproveType:   string(spec.ApproveType),
-		Approver:      spec.Approver,
+		Name:        spec.Name,
+		ConfigType:  string(spec.ConfigType),
+		Memo:        spec.Memo,
+		Alias:       spec.Alias,
+		DataType:    string(spec.DataType),
+		IsApprove:   spec.IsApprove,
+		ApproveType: string(spec.ApproveType),
+		Approver:    spec.Approver,
 	}
 }
 

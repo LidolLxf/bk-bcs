@@ -165,6 +165,10 @@ func (as *AppSpec) ValidateCreate() error {
 		return err
 	}
 
+	if as.IsApprove && (as.ApproveType == "" || as.Approver == "") {
+		return errors.New("approve_type or approver cannot be empty")
+	}
+
 	switch as.ConfigType {
 	case File:
 	case KV:
