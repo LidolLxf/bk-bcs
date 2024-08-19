@@ -281,27 +281,17 @@ func (s StrategySpec) ValidateSubmitPublishContent() error {
 		}
 	}
 
-	// there are only two status to submit
-	if s.PublishStatus != AlreadyPublish && s.PublishStatus != PendApproval {
-		return fmt.Errorf("publish status could not be create: %s", s.PublishStatus)
+	// validate publish_type
+	if s.Approver != "" && s.PublishType == Immediately {
+		return fmt.Errorf("app need approve, invalid publish_type: %s", s.PublishType)
 	}
 
-	if s.PublishStatus == AlreadyPublish && s.PublishType != Immediately {
-		return errors.New("already publish only can be immediately")
+	// app donnot need approve
+	if s.Approver == "" &&
+		(s.PublishType == Automatically || s.PublishType == Manually) {
+		return fmt.Errorf("app donnot need approve, invalid publish_type: %s", s.PublishType)
 	}
 
-	if s.PublishStatus == PendApproval && s.PublishType == Immediately {
-		return errors.New("pend approval cannot be immediately")
-	}
-
-	if s.PublishStatus == RejectedApproval && s.RejectReason == "" {
-		return fmt.Errorf("reject reason is null")
-	}
-
-	// approver required for approval
-	if s.PublishStatus == PendApproval && s.Approver == "" {
-		return fmt.Errorf("approver is null")
-	}
 	return nil
 }
 

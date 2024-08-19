@@ -91,7 +91,6 @@ func (s *Service) SubmitPublishApprove(ctx context.Context, req *pbcs.SubmitPubl
 		GroupName:       req.GroupName,
 		PublishType:     req.PublishType,
 		PublishTime:     req.PublishTime,
-		PublishStatus:   req.PublishStatus,
 	}
 	rp, err := s.client.DS.SubmitPublishApprove(grpcKit.RpcCtx(), r)
 	if err != nil {

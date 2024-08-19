@@ -194,33 +194,10 @@ func (s *Service) SubmitPublishApprove(
 		}
 	}
 
-	opt := &types.PublishOption{
-		BizID:     req.BizId,
-		AppID:     req.AppId,
-		ReleaseID: req.ReleaseId,
-		All:       req.All,
-		Default:   req.Default,
-		Memo:      req.Memo,
-		Groups:    groupIDs,
-		Revision: &table.CreatedRevision{
-			Creator: grpcKit.User,
-		},
-		PublishType:   table.PublishType(req.PublishType),
-		PublishTime:   req.PublishTime,
-		PublishStatus: table.PublishStatus(req.PublishStatus),
-		Approver:      app.Spec.Approver,
-		PubState:      string(table.Publishing),
-	}
-
-	// if approval required, current approver required, pub_state unpublished
-	if app.Spec.IsApprove {
-		opt.ApproverProgress = app.Spec.Approver
-		opt.PubState = string(table.Unpublished)
-		if app.Spec.ApproveType == table.CountSign {
-			// approver cannot be blank when countersigning
-			approvers := strings.Split(app.Spec.Approver, ",")
-			opt.ApproverProgress = approvers[0]
-		}
+	opt := s.parsePublishOption(req, app)
+	opt.Groups = groupIDs
+	opt.Revision = &table.CreatedRevision{
+		Creator: grpcKit.User,
 	}
 
 	pshID, err := s.dao.Publish().SubmitWithTx(grpcKit, tx, opt)
@@ -248,6 +225,42 @@ func (s *Service) SubmitPublishApprove(
 		HaveCredentials:            haveCredentials,
 	}
 	return resp, nil
+}
+
+// parse publish option
+func (s *Service) parsePublishOption(req *pbds.SubmitPublishApproveReq, app *table.App) *types.PublishOption {
+
+	opt := &types.PublishOption{
+		BizID:         req.BizId,
+		AppID:         req.AppId,
+		ReleaseID:     req.ReleaseId,
+		All:           req.All,
+		Default:       req.Default,
+		Memo:          req.Memo,
+		PublishType:   table.PublishType(req.PublishType),
+		PublishTime:   req.PublishTime,
+		PublishStatus: table.PendApproval,
+		PubState:      string(table.Publishing),
+	}
+
+	// if approval required, current approver required, pub_state unpublished
+	if app.Spec.IsApprove {
+		opt.Approver = app.Spec.Approver
+		opt.ApproverProgress = app.Spec.Approver
+		opt.PubState = string(table.Unpublished)
+		if app.Spec.ApproveType == table.CountSign {
+			// approver cannot be blank when countersigning
+			approvers := strings.Split(app.Spec.Approver, ",")
+			opt.ApproverProgress = approvers[0]
+		}
+	}
+
+	// publish immediately
+	if req.PublishType == string(table.Immediately) {
+		opt.PublishStatus = table.AlreadyPublish
+	}
+
+	return opt
 }
 
 // checkAppHaveCredentials check if there is available credential for app.

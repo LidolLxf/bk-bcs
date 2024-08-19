@@ -47,7 +47,7 @@ func (s *Service) GetLastSelect(ctx context.Context, req *pbds.GetLastSelectReq)
 
 	strategy := s.dao.GenQuery().Strategy
 	strategyRecord, err := strategy.WithContext(ctx).Where(
-		strategy.AppID.Eq(req.AppId), strategy.AppID.Eq(req.BizId)).Last()
+		strategy.AppID.Eq(req.AppId), strategy.BizID.Eq(req.BizId)).Last()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return resp, nil

@@ -1733,7 +1733,6 @@ message SubmitPublishApproveReq {
   string group_name = 10;
   string publish_type = 11;
   string publish_time = 12;
-  string publish_status = 13;
 }
 
 message GetLastSelectReq {
