@@ -449,16 +449,6 @@ func (dao *pubDao) submit(kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOptio
 
 	// publish immediately and update the table directly
 	if opt.PublishType == table.Immediately {
-		// audit this to create strategy details
-		ad := dao.auditDao.DecoratorV2(kit, opt.BizID).PrepareCreate(stg)
-		if err := ad.Do(tx.Query); err != nil {
-			return 0, err
-		}
-		// audit this to publish details
-		ad = dao.auditDao.DecoratorV2(kit, opt.BizID).PreparePublish(stg)
-		if err := ad.Do(tx.Query); err != nil {
-			return 0, err
-		}
 
 		// add release publish num
 		if err := dao.updateReleasePublishInfo(kit, tx.Query, opt); err != nil {

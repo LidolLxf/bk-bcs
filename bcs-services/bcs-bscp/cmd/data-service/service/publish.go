@@ -22,6 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
 
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/enumor"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/gen"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
@@ -152,6 +153,8 @@ func (s *Service) SubmitPublishApprove(
 		return nil, fmt.Errorf("release %s is deprecated, can not be submited", release.Spec.Name)
 	}
 
+	// group name
+	groupName := []string{}
 	if !req.All {
 		if req.GrayPublishMode == "" {
 			// !NOTE: Compatible with previous pipelined plugins version
@@ -179,6 +182,7 @@ func (s *Service) SubmitPublishApprove(
 					return nil, fmt.Errorf("group %d not exist", groupID)
 				}
 				groupIDs = append(groupIDs, group.ID)
+				groupName = append(groupName, group.Spec.Name)
 			}
 		}
 		if publishMode == table.PublishByLabels {
@@ -191,6 +195,7 @@ func (s *Service) SubmitPublishApprove(
 				return nil, gErr
 			}
 			groupIDs = append(groupIDs, groupID)
+			groupName = append(groupName, req.GroupName)
 		}
 	}
 
@@ -210,6 +215,23 @@ func (s *Service) SubmitPublishApprove(
 	}
 	haveCredentials, err := s.checkAppHaveCredentials(grpcKit, req.BizId, req.AppId)
 	if err != nil {
+		if rErr := tx.Rollback(); rErr != nil {
+			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+		}
+		return nil, err
+	}
+
+	// audit this to create strategy details
+	ad := s.dao.AuditDao().DecoratorV3(grpcKit, opt.BizID, &table.AuditField{
+		Action: enumor.PublishVerionConfig,
+		ResourceInstance: map[string]string{
+			"releases_name": release.Spec.Name,
+			"group":         strings.Join(groupName, ","),
+		},
+		Status: enumor.PendApproval,
+		AppId:  app.AppID(),
+	}).PrepareCreateByInstance(pshID, req)
+	if err := ad.Do(tx.Query); err != nil {
 		if rErr := tx.Rollback(); rErr != nil {
 			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
 		}

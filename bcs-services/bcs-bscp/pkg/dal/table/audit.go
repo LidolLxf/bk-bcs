@@ -13,6 +13,7 @@
 package table
 
 import (
+	"strings"
 	"time"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/enumor"
@@ -48,6 +49,9 @@ type Audit struct {
 	Operator     string                   `db:"operator" json:"operator" gorm:"column:operator"`
 	CreatedAt    time.Time                `db:"created_at" json:"created_at" gorm:"column:created_at"`
 	Detail       string                   `db:"detail" json:"detail" gorm:"column:detail"` // Detail is a json raw string
+	ResInstance  string                   `db:"res_instance" json:"res_instance" gorm:"column:res_instance"`
+	OperateWay   string                   `db:"operate_way" json:"operate_way" gorm:"column:operate_way"`
+	Status       string                   `db:"status" json:"status" gorm:"column:status"`
 }
 
 // TableName is the audit's database table name.
@@ -59,4 +63,29 @@ func (a *Audit) TableName() Name {
 type AuditBasicDetail struct {
 	Prev    interface{} `json:"prev"`
 	Changed interface{} `json:"changed"`
+}
+
+// AuditField defines the audit's basic field
+type AuditField struct {
+	OperateWay       string
+	Action           enumor.AuditAction
+	ResourceInstance map[string]string
+	Status           enumor.AuditStatus
+	AppId            uint32
+}
+
+// InstanceToString resource instance to string
+func InstanceToString(m map[string]string) string {
+	if len(m) == 0 {
+		return ""
+	}
+	var s strings.Builder
+	for key, value := range m {
+		s.WriteString(key + ":" + value + "\n")
+	}
+	resp := s.String()
+	if len(resp) > 1 {
+		return resp[:len(resp)-1]
+	}
+	return s.String()
 }

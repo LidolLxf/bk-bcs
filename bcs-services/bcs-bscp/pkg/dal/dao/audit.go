@@ -33,6 +33,7 @@ type AuditDao interface {
 	// according CUD scenarios.
 	Decorator(kit *kit.Kit, bizID uint32, res enumor.AuditResourceType) AuditDecorator
 	DecoratorV2(kit *kit.Kit, bizID uint32) AuditPrepare
+	DecoratorV3(kit *kit.Kit, bizID uint32, a *table.AuditField) AuditPrepare
 	// One insert one resource's audit.
 	One(kit *kit.Kit, audit *table.Audit, opt *AuditOption) error
 }
@@ -79,6 +80,11 @@ func (au *audit) Decorator(kit *kit.Kit, bizID uint32, res enumor.AuditResourceT
 // DecoratorV2 return audit decorator for to record audit.
 func (au *audit) DecoratorV2(kit *kit.Kit, bizID uint32) AuditPrepare {
 	return initAuditBuilderV2(kit, bizID, au)
+}
+
+// DecoratorV2 return audit decorator for to record audit.
+func (au *audit) DecoratorV3(kit *kit.Kit, bizID uint32, a *table.AuditField) AuditPrepare {
+	return initAuditBuilderV3(kit, bizID, a, au)
 }
 
 // One audit one resource's operation.

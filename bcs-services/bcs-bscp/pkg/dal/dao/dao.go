@@ -36,6 +36,7 @@ type Set interface {
 	GenQuery() *gen.Query
 	ID() IDGenInterface
 	App() App
+	AuditDao() AuditDao
 	Commit() Commit
 	ConfigItem() ConfigItem
 	Content() Content
@@ -175,6 +176,11 @@ func (s *set) App() App {
 		genQ:     s.genQ,
 		event:    s.event,
 	}
+}
+
+// AuditDao returns the audit's DAO
+func (s *set) AuditDao() AuditDao {
+	return s.auditDao
 }
 
 // Commit returns the commits' DAO
