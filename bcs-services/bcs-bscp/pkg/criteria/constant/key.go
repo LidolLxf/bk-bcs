@@ -33,6 +33,9 @@ const (
 	// AppCodeKey is blueking application code header key.
 	AppCodeKey = "X-Bkapi-App-Code"
 
+	// OperateWayKey is approve operate way header key.
+	OperateWayKey = "X-Bkapi-Operate-Way"
+
 	// Space
 	SpaceIDKey     = "X-Bkapi-Space-Id"
 	SpaceTypeIDKey = "X-Bkapi-Space-Type-Id"

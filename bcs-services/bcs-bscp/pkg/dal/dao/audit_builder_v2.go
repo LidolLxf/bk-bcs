@@ -83,6 +83,7 @@ func initAuditBuilderV3(kit *kit.Kit, bizID uint32, au *table.AuditField, ad *au
 			Action:      au.Action,
 			Status:      string(au.Status),
 			ResInstance: table.InstanceToString(au.ResourceInstance),
+			OperateWay:  au.OperateWay,
 		},
 		ad:    ad,
 		bizID: bizID,
@@ -92,7 +93,7 @@ func initAuditBuilderV3(kit *kit.Kit, bizID uint32, au *table.AuditField, ad *au
 	ab.toAudit.ResourceType = enumor.ActionMap[ab.toAudit.Action]
 
 	// default value
-	if ab.toAudit.OperateWay == "" {
+	if ab.toAudit.OperateWay != string(enumor.WebUI) {
 		ab.toAudit.OperateWay = string(enumor.API)
 	}
 

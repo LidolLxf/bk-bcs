@@ -223,12 +223,13 @@ func (s *Service) SubmitPublishApprove(
 
 	// audit this to create strategy details
 	ad := s.dao.AuditDao().DecoratorV3(grpcKit, opt.BizID, &table.AuditField{
-		Action: enumor.PublishVerionConfig,
+		OperateWay: grpcKit.OperateWay,
+		Action:     enumor.PublishVerionConfig,
 		ResourceInstance: map[string]string{
 			"releases_name": release.Spec.Name,
 			"group":         strings.Join(groupName, ","),
 		},
-		Status: enumor.PendApproval,
+		Status: enumor.AuditStatus(opt.PublishStatus),
 		AppId:  app.AppID(),
 	}).PrepareCreateByInstance(pshID, req)
 	if err := ad.Do(tx.Query); err != nil {
@@ -261,12 +262,13 @@ func (s *Service) parsePublishOption(req *pbds.SubmitPublishApproveReq, app *tab
 		Memo:          req.Memo,
 		PublishType:   table.PublishType(req.PublishType),
 		PublishTime:   req.PublishTime,
-		PublishStatus: table.PendApproval,
+		PublishStatus: table.PendPublish,
 		PubState:      string(table.Publishing),
 	}
 
 	// if approval required, current approver required, pub_state unpublished
 	if app.Spec.IsApprove {
+		opt.PublishStatus = table.PendApproval
 		opt.Approver = app.Spec.Approver
 		opt.ApproverProgress = app.Spec.Approver
 		opt.PubState = string(table.Unpublished)

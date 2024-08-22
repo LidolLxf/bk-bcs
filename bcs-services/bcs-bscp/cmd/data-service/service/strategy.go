@@ -136,6 +136,11 @@ func (s *Service) GetReleasesStatus(ctx context.Context, req *pbds.GetReleasesSt
 
 	strategy, err := s.dao.Strategy().GetLast(grpcKit, req.BizId, req.AppId, req.ReleaseId)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &pbstrategy.Strategy{
+				Spec: &pbstrategy.StrategySpec{},
+			}, nil
+		}
 		logs.Errorf("get strategy last failed, err: %v, rid: %s", err, grpcKit.Rid)
 		return nil, err
 	}
