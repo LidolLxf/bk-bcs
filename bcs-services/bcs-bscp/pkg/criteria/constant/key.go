@@ -34,7 +34,7 @@ const (
 	AppCodeKey = "X-Bkapi-App-Code"
 
 	// OperateWayKey is approve operate way header key.
-	OperateWayKey = "X-Bkapi-Operate-Way"
+	OperateWayKey = "X-Bscp-Operate-Way"
 
 	// Space
 	SpaceIDKey     = "X-Bkapi-Space-Id"
