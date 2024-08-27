@@ -15,6 +15,7 @@ package dao
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"gorm.io/gorm"
@@ -25,6 +26,8 @@ import (
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/sharding"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
+	pbds "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/data-service"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/types"
 )
 
 // AuditDao supplies all the audit operations.
@@ -36,6 +39,9 @@ type AuditDao interface {
 	DecoratorV3(kit *kit.Kit, bizID uint32, a *table.AuditField) AuditPrepare
 	// One insert one resource's audit.
 	One(kit *kit.Kit, audit *table.Audit, opt *AuditOption) error
+	// ListAuditsAppStrategy List audit apo strategy.
+	ListAuditsAppStrategy(
+		kit *kit.Kit, req *pbds.ListAuditsReq) ([]*types.ListAuditsAppStrategy, int64, error)
 }
 
 // AuditOption defines all the needed infos to audit a resource.
@@ -115,4 +121,112 @@ func (au *audit) One(kit *kit.Kit, audit *table.Audit, opt *AuditOption) error {
 		return fmt.Errorf("insert audit failed, err: %v", err)
 	}
 	return nil
+}
+
+// ListAuditsAppStrategy List audit apo strategy.
+func (au *audit) ListAuditsAppStrategy(
+	kit *kit.Kit, req *pbds.ListAuditsReq) ([]*types.ListAuditsAppStrategy, int64, error) {
+	var publishs []*types.ListAuditsAppStrategy
+	var noPublishs []*types.ListAuditsAppStrategy
+
+	audit := au.genQ.Audit
+
+	query, err := au.createQuery(kit, req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// priority display publish version config
+	publishCount, err := query.Where(audit.Action.Eq(string(enumor.PublishVersionConfig))).
+		Order(audit.CreatedAt.Desc()).
+		ScanByPage(&publishs, int(req.Start), int(req.Limit))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 非上线版本配置条数开始索引位置
+	var residueOffset uint32
+	if req.Start > uint32(publishCount) {
+		residueOffset = req.Start - uint32(publishCount)
+	}
+
+	query2, err := au.createQuery(kit, req)
+	if err != nil {
+		return nil, 0, err
+	}
+	noPublishCount, err := query2.Not(audit.Action.Eq(string(enumor.PublishVersionConfig))).
+		Order(audit.CreatedAt.Desc()).
+		ScanByPage(&noPublishs, int(residueOffset), int(req.Limit)-len(publishs))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	publishs = append(publishs, noPublishs...)
+	return publishs, publishCount + noPublishCount, nil
+}
+
+// createQuery create same query
+func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditDo, error) {
+	audit := au.genQ.Audit
+	app := au.genQ.App
+	strategy := au.genQ.Strategy
+
+	result := audit.WithContext(kit.Ctx).Select(audit.ID, audit.ResourceType, audit.ResourceID, audit.Action,
+		audit.BizID, audit.AppID, audit.Operator, audit.CreatedAt, audit.ResInstance, audit.OperateWay, audit.Status,
+		app.Name, app.Creator,
+		strategy.PublishType, strategy.PublishTime, strategy.PublishTime,
+		strategy.PublishStatus, strategy.RejectReason, strategy.Approver, strategy.ApproverProgress,
+		strategy.UpdatedAt).
+		LeftJoin(app, app.ID.EqCol(audit.AppID)).
+		LeftJoin(strategy, strategy.ID.EqCol(audit.StrategyId)).
+		Where(audit.BizID.Eq(req.BizId))
+
+	// if not query all app, need current app_id
+	if !req.All {
+		result = result.Where(audit.AppID.Eq(req.AppId))
+	}
+
+	if req.StartTime != "" {
+		startTime, err := time.Parse(time.DateTime, req.StartTime)
+		if err != nil {
+			return nil, err
+		}
+		result = result.Where(audit.CreatedAt.Gte(startTime))
+	}
+
+	if req.EndTime != "" {
+		endTime, err := time.Parse(time.DateTime, req.EndTime)
+		if err != nil {
+			return nil, err
+		}
+		// database has milliseconds left, take the upper limit
+		endTime = endTime.Add(time.Second)
+		result = result.Where(audit.CreatedAt.Lt(endTime))
+	}
+
+	// only two cases, one is to show the pending publish operation, the other is to show the failed operation
+	if req.Operate == string(enumor.PendPublish) {
+		result = result.Where(audit.Status.Eq(req.Operate))
+	}
+
+	if req.Operate == string(enumor.Failure) {
+		result = result.Where(audit.Status.Eq(req.Operate))
+	}
+
+	app.WithContext(kit.Ctx).Or(app.Name.Like("%" + req.SearchValue + "%"))
+	audit.WithContext(kit.Ctx).Or()
+
+	if req.SearchValue != "" {
+		search := app.WithContext(kit.Ctx).
+			Or(app.Name.Like("%" + req.SearchValue + "%")).
+			Or(audit.ResourceType.Like("%" + req.SearchValue + "%")).
+			Or(audit.Action.Like("%" + req.SearchValue + "%")).
+			Or(audit.ResInstance.Like("%" + req.SearchValue + "%")).
+			Or(audit.Status.Like("%" + req.SearchValue + "%")).
+			Or(audit.Operator.Like("%" + req.SearchValue + "%")).
+			Or(audit.OperateWay.Like("%" + req.SearchValue + "%"))
+		result = result.Where(search)
+	}
+
+	return result, nil
 }

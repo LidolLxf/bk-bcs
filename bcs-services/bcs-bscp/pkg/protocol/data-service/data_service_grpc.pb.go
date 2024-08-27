@@ -169,6 +169,7 @@ const (
 	Data_GetLastPublish_FullMethodName                    = "/pbds.Data/GetLastPublish"
 	Data_GetReleasesStatus_FullMethodName                 = "/pbds.Data/GetReleasesStatus"
 	Data_GenerateReleaseAndPublish_FullMethodName         = "/pbds.Data/GenerateReleaseAndPublish"
+	Data_ListAudits_FullMethodName                        = "/pbds.Data/ListAudits"
 	Data_CreateCredential_FullMethodName                  = "/pbds.Data/CreateCredential"
 	Data_ListCredentials_FullMethodName                   = "/pbds.Data/ListCredentials"
 	Data_DeleteCredential_FullMethodName                  = "/pbds.Data/DeleteCredential"
@@ -371,6 +372,8 @@ type DataClient interface {
 	GetLastPublish(ctx context.Context, in *GetLastPublishReq, opts ...grpc.CallOption) (*GetLastPublishResp, error)
 	GetReleasesStatus(ctx context.Context, in *GetReleasesStatusReq, opts ...grpc.CallOption) (*strategy.Strategy, error)
 	GenerateReleaseAndPublish(ctx context.Context, in *GenerateReleaseAndPublishReq, opts ...grpc.CallOption) (*PublishResp, error)
+	// audit related interface.
+	ListAudits(ctx context.Context, in *ListAuditsReq, opts ...grpc.CallOption) (*ListAuditsResp, error)
 	// credential related interface
 	CreateCredential(ctx context.Context, in *CreateCredentialReq, opts ...grpc.CallOption) (*CreateResp, error)
 	ListCredentials(ctx context.Context, in *ListCredentialReq, opts ...grpc.CallOption) (*ListCredentialResp, error)
@@ -1664,6 +1667,15 @@ func (c *dataClient) GenerateReleaseAndPublish(ctx context.Context, in *Generate
 	return out, nil
 }
 
+func (c *dataClient) ListAudits(ctx context.Context, in *ListAuditsReq, opts ...grpc.CallOption) (*ListAuditsResp, error) {
+	out := new(ListAuditsResp)
+	err := c.cc.Invoke(ctx, Data_ListAudits_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *dataClient) CreateCredential(ctx context.Context, in *CreateCredentialReq, opts ...grpc.CallOption) (*CreateResp, error) {
 	out := new(CreateResp)
 	err := c.cc.Invoke(ctx, Data_CreateCredential_FullMethodName, in, out, opts...)
@@ -2168,6 +2180,8 @@ type DataServer interface {
 	GetLastPublish(context.Context, *GetLastPublishReq) (*GetLastPublishResp, error)
 	GetReleasesStatus(context.Context, *GetReleasesStatusReq) (*strategy.Strategy, error)
 	GenerateReleaseAndPublish(context.Context, *GenerateReleaseAndPublishReq) (*PublishResp, error)
+	// audit related interface.
+	ListAudits(context.Context, *ListAuditsReq) (*ListAuditsResp, error)
 	// credential related interface
 	CreateCredential(context.Context, *CreateCredentialReq) (*CreateResp, error)
 	ListCredentials(context.Context, *ListCredentialReq) (*ListCredentialResp, error)
@@ -2634,6 +2648,9 @@ func (UnimplementedDataServer) GetReleasesStatus(context.Context, *GetReleasesSt
 }
 func (UnimplementedDataServer) GenerateReleaseAndPublish(context.Context, *GenerateReleaseAndPublishReq) (*PublishResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateReleaseAndPublish not implemented")
+}
+func (UnimplementedDataServer) ListAudits(context.Context, *ListAuditsReq) (*ListAuditsResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListAudits not implemented")
 }
 func (UnimplementedDataServer) CreateCredential(context.Context, *CreateCredentialReq) (*CreateResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCredential not implemented")
@@ -5227,6 +5244,24 @@ func _Data_GenerateReleaseAndPublish_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Data_ListAudits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServer).ListAudits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Data_ListAudits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServer).ListAudits(ctx, req.(*ListAuditsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Data_CreateCredential_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateCredentialReq)
 	if err := dec(in); err != nil {
@@ -6465,6 +6500,10 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateReleaseAndPublish",
 			Handler:    _Data_GenerateReleaseAndPublish_Handler,
+		},
+		{
+			MethodName: "ListAudits",
+			Handler:    _Data_ListAudits_Handler,
 		},
 		{
 			MethodName: "CreateCredential",

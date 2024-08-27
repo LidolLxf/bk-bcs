@@ -55,3 +55,14 @@ message Revision {
   string created_at = 3;
   string updated_at = 4;
 }
+
+// AuditStrategy strategy relate audit
+message AuditStrategy {
+  string publish_type = 1;
+  string publish_time = 2;
+  string publish_status = 3;
+  string reject_reason = 4;
+  string approver = 5;
+  string approver_progress = 6;
+  string updated_at = 7;
+}

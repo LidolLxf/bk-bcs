@@ -1,6 +1,7 @@
 all:
 	@cd base && make
 	@cd app && make
+	@cd audit && make
 	@cd config-item && make
 	@cd content && make
 	@cd commit && make

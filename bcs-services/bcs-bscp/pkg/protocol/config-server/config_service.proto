@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "pkg/protocol/core/app/app.proto";
+import "pkg/protocol/core/audit/audit.proto";
 import "pkg/protocol/core/app-template-binding/app_template_binding.proto";
 import "pkg/protocol/core/base/base.proto";
 import "pkg/protocol/core/config-item/config_item.proto";
@@ -826,6 +827,13 @@ option (google.api.http) = {
     };
   }
 
+  rpc GenerateReleaseAndPublish(GenerateReleaseAndPublishReq) returns (PublishResp) {
+    option (google.api.http) = {
+      post: "/api/v1/config/biz/{biz_id}/apps/{app_id}/publish"
+      body: "*"
+    };
+  }
+
   rpc SubmitPublishApprove(SubmitPublishApproveReq) returns (PublishResp) {
     option (google.api.method_visibility).restriction = "BKAPIGW";
     option (google.api.http) = {
@@ -852,10 +860,9 @@ option (google.api.http) = {
     };
   }
 
-  rpc GenerateReleaseAndPublish(GenerateReleaseAndPublishReq) returns (PublishResp) {
+  rpc ListAudits(ListAuditsReq) returns (ListAuditsResp) {
     option (google.api.http) = {
-      post: "/api/v1/config/biz/{biz_id}/apps/{app_id}/publish"
-      body: "*"
+      get: "/api/v1/config/biz_id/{biz_id}/audits"
     };
   }
 
@@ -2746,6 +2753,28 @@ message PublishReq {
   string group_name = 10;
 }
 
+message GenerateReleaseAndPublishReq {
+  uint32 biz_id = 1;
+  uint32 app_id = 2;
+  string release_name = 3;
+  string release_memo = 4;
+  repeated pbtv.TemplateVariableSpec variables = 5;
+  bool all = 6;
+  string gray_publish_mode = 7;
+  repeated string groups = 8;
+  repeated google.protobuf.Struct labels = 9;
+  string group_name = 10;
+}
+
+message GenerateReleaseAndPublishResp {
+  uint32 id = 1;
+}
+
+message PublishResp {
+  uint32 id = 1;
+  bool have_credentials = 2;
+}
+
 message SubmitPublishApproveReq {
   uint32 biz_id = 1;
   uint32 app_id = 2;
@@ -2788,26 +2817,21 @@ message GetReleasesStatusReq {
   uint32 release_id = 3;
 }
 
-message GenerateReleaseAndPublishReq {
+message ListAuditsReq {
   uint32 biz_id = 1;
   uint32 app_id = 2;
-  string release_name = 3;
-  string release_memo = 4;
-  repeated pbtv.TemplateVariableSpec variables = 5;
-  bool all = 6;
-  string gray_publish_mode = 7;
-  repeated string groups = 8;
-  repeated google.protobuf.Struct labels = 9;
-  string group_name = 10;
+  string start_time = 3;
+  string end_time = 4;
+  string operate = 5;
+  string search_value = 6;
+  uint32 start = 7;
+  uint32 limit = 8;
+  bool all = 9;
 }
 
-message GenerateReleaseAndPublishResp {
-  uint32 id = 1;
-}
-
-message PublishResp {
-  uint32 id = 1;
-  bool have_credentials = 2;
+message ListAuditsResp {
+  uint32 count = 1;
+  repeated pbaudit.ListAuditsAppStrategy details = 2;
 }
 
 message CreateKvReq {

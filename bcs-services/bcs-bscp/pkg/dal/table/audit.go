@@ -51,7 +51,8 @@ type Audit struct {
 	Detail       string                   `db:"detail" json:"detail" gorm:"column:detail"` // Detail is a json raw string
 	ResInstance  string                   `db:"res_instance" json:"res_instance" gorm:"column:res_instance"`
 	OperateWay   string                   `db:"operate_way" json:"operate_way" gorm:"column:operate_way"`
-	Status       string                   `db:"status" json:"status" gorm:"column:status"`
+	Status       enumor.AuditStatus       `db:"status" json:"status" gorm:"column:status"`
+	StrategyId   uint32                   `db:"strategy_id" json:"strategy_id" gorm:"column:strategy_id"`
 }
 
 // TableName is the audit's database table name.
@@ -72,6 +73,7 @@ type AuditField struct {
 	ResourceInstance map[string]string
 	Status           enumor.AuditStatus
 	AppId            uint32
+	StrategyId       uint32
 }
 
 // InstanceToString resource instance to string

@@ -85,7 +85,7 @@ func (s *Service) GetLastPublish(ctx context.Context, req *pbds.GetLastPublishRe
 
 	strategy := s.dao.GenQuery().Strategy
 	strategyRecord, err := strategy.WithContext(ctx).Where(
-		strategy.AppID.Eq(req.AppId), strategy.AppID.Eq(req.BizId)).Last()
+		strategy.AppID.Eq(req.AppId), strategy.BizID.Eq(req.BizId)).Last()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return resp, nil
@@ -120,10 +120,11 @@ func (s *Service) GetLastPublish(ctx context.Context, req *pbds.GetLastPublishRe
 	var publishRecords []*release.PublishRecord
 	for _, v := range lrs {
 		publishRecords = append(publishRecords, &release.PublishRecord{
-			PublishTime: v.PublishTime,
-			Name:        v.Name,
-			Scope:       pbstrategy.PbScope(&v.Scope),
-			Creator:     v.Creator,
+			PublishTime:   v.PublishTime,
+			Name:          v.Name,
+			Scope:         pbstrategy.PbScope(&v.Scope),
+			Creator:       v.Creator,
+			FullyReleased: v.FullyReleased,
 		})
 	}
 	resp.PublishRecord = publishRecords
@@ -143,6 +144,21 @@ func (s *Service) GetReleasesStatus(ctx context.Context, req *pbds.GetReleasesSt
 		}
 		logs.Errorf("get strategy last failed, err: %v, rid: %s", err, grpcKit.Rid)
 		return nil, err
+	}
+
+	releasedGroups, err := s.dao.ReleasedGroup().ListAllByReleaseID(grpcKit, strategy.Attachment.BizID, req.ReleaseId)
+	if err != nil {
+		logs.Errorf("list all by release id failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
+	// 该版本曾经上过线，后被分组重新上线覆盖了
+	if len(releasedGroups) == 0 {
+		strategy.Spec.PublishStatus = ""
+		strategy.Spec.Approver = ""
+		strategy.Spec.ApproverProgress = ""
+		strategy.Spec.PublishTime = ""
+		strategy.Spec.PublishType = ""
 	}
 
 	resp := pbstrategy.Strategy{

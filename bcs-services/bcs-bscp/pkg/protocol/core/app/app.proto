@@ -29,3 +29,9 @@ message AppSpec {
   string approve_type = 7;  // approve_type is enum type
   string approver = 8;
 }
+
+// AuditApp audit and app
+message AuditApp {
+  string name = 1;
+  string creator = 2;
+}

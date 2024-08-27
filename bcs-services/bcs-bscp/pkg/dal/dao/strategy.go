@@ -32,7 +32,7 @@ type strategyDao struct {
 	auditDao AuditDao
 }
 
-// Get released kv.
+// Get strategy kv.
 func (dao *strategyDao) GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (*table.Strategy, error) {
 	m := dao.genQ.Strategy
 	return m.WithContext(kit.Ctx).Where(

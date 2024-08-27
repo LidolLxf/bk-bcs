@@ -84,10 +84,10 @@ var AuditResourceTypeEnums = map[AuditResourceType]bool{
 
 // ActionMap enum all action
 var ActionMap = map[AuditAction]AuditResourceType{
-	CreateApp:           ResAppConfig,
-	UpdateApp:           ResAppConfig,
-	DeleteApp:           ResAppConfig,
-	PublishVerionConfig: ResAppConfig, // 上线配置版本
+	CreateApp:            ResAppConfig,
+	UpdateApp:            ResAppConfig,
+	DeleteApp:            ResAppConfig,
+	PublishVersionConfig: ResAppConfig, // 上线配置版本
 }
 
 // Exist judge enum value exist.
@@ -121,8 +121,8 @@ const (
 	UpdateApp AuditAction = "UpdateApp"
 	// DeleteApp 删除服务
 	DeleteApp AuditAction = "DeleteApp"
-	// PublishVerionConfig 上线版本配置
-	PublishVerionConfig AuditAction = "PublishVerionConfig"
+	// PublishVersionConfig 上线版本配置
+	PublishVersionConfig AuditAction = "PublishVersionConfig"
 )
 
 // AuditActionEnums op type map.

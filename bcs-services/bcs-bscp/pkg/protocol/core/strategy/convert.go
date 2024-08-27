@@ -10,7 +10,7 @@
  * limitations under the License.
  */
 
-// Package pbstrategy provides pbstrategie core protocol struct and convert functions.
+// Package pbstrategy provides pbstrategy core protocol struct and convert functions.
 package pbstrategy
 
 import (

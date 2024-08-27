@@ -55,8 +55,9 @@ type ListReleaseDetails struct {
 
 // ListReleasesStrategies defines model to list release strategie.
 type ListReleasesStrategies struct {
-	PublishTime string      `gorm:"column:publish_time" json:"publish_time"`
-	Name        string      `gorm:"column:name" json:"name"`
-	Scope       table.Scope `gorm:"column:scope;type:json" json:"scope"`
-	Creator     string      `gorm:"column:creator" json:"creator"`
+	PublishTime   string      `gorm:"column:publish_time" json:"publish_time"`
+	Name          string      `gorm:"column:name" json:"name"`
+	Scope         table.Scope `gorm:"column:scope;type:json" json:"scope"`
+	Creator       string      `gorm:"column:creator" json:"creator"`
+	FullyReleased bool        `gorm:"column:fully_released" json:"fully_released"`
 }

@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "pkg/protocol/core/app/app.proto";
+import "pkg/protocol/core/audit/audit.proto";
 import "pkg/protocol/core/app-template-binding/app_template_binding.proto";
 import "pkg/protocol/core/base/base.proto";
 import "pkg/protocol/core/config-item/config_item.proto";
@@ -218,6 +219,9 @@ service Data {
   rpc GetLastPublish(GetLastPublishReq) returns (GetLastPublishResp) {}
   rpc GetReleasesStatus(GetReleasesStatusReq) returns (pbstrategy.Strategy) {}
   rpc GenerateReleaseAndPublish(GenerateReleaseAndPublishReq) returns (PublishResp) {}
+
+  // audit related interface.
+  rpc ListAudits(ListAuditsReq) returns (ListAuditsResp) {}
 
   // credential related interface
   rpc CreateCredential(CreateCredentialReq) returns (CreateResp) {}
@@ -1778,6 +1782,23 @@ message GenerateReleaseAndPublishReq {
 message PublishResp {
   uint32 published_strategy_history_id = 1;
   bool have_credentials = 2;
+}
+
+message ListAuditsReq {
+  uint32 biz_id = 1;
+  uint32 app_id = 2;
+  string start_time = 3;
+  string end_time = 4;
+  string operate = 5;
+  string search_value = 6;
+  uint32 start = 7;
+  uint32 limit = 8;
+  bool all = 9;
+}
+
+message ListAuditsResp {
+  uint32 count = 1;
+  repeated pbaudit.ListAuditsAppStrategy details = 2;
 }
 
 message ListInstancesReq {

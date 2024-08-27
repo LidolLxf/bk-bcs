@@ -224,13 +224,14 @@ func (s *Service) SubmitPublishApprove(
 	// audit this to create strategy details
 	ad := s.dao.AuditDao().DecoratorV3(grpcKit, opt.BizID, &table.AuditField{
 		OperateWay: grpcKit.OperateWay,
-		Action:     enumor.PublishVerionConfig,
+		Action:     enumor.PublishVersionConfig,
 		ResourceInstance: map[string]string{
 			"releases_name": release.Spec.Name,
 			"group":         strings.Join(groupName, ","),
 		},
-		Status: enumor.AuditStatus(opt.PublishStatus),
-		AppId:  app.AppID(),
+		Status:     enumor.AuditStatus(opt.PublishStatus),
+		AppId:      app.AppID(),
+		StrategyId: pshID,
 	}).PrepareCreateByInstance(pshID, req)
 	if err := ad.Do(tx.Query); err != nil {
 		if rErr := tx.Rollback(); rErr != nil {
