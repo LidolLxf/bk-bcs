@@ -153,7 +153,7 @@ func (s *Service) GetReleasesStatus(ctx context.Context, req *pbds.GetReleasesSt
 	}
 
 	// 该版本曾经上过线，后被分组重新上线覆盖了
-	if len(releasedGroups) == 0 {
+	if len(releasedGroups) == 0 && strategy.Spec.PublishStatus == table.AlreadyPublish {
 		strategy.Spec.PublishStatus = ""
 		strategy.Spec.Approver = ""
 		strategy.Spec.ApproverProgress = ""
