@@ -84,6 +84,7 @@ func initAuditBuilderV3(kit *kit.Kit, bizID uint32, au *table.AuditField, ad *au
 			Status:      au.Status,
 			ResInstance: table.InstanceToString(au.ResourceInstance),
 			OperateWay:  au.OperateWay,
+			StrategyId:  au.StrategyId,
 		},
 		ad:    ad,
 		bizID: bizID,

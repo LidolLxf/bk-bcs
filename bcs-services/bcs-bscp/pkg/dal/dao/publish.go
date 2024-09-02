@@ -38,6 +38,8 @@ type Publish interface {
 	PublishWithTx(kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOption) (id uint32, err error)
 
 	SubmitWithTx(kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOption) (id uint32, err error)
+
+	UpsertPublishWithTx(kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOption, stg *table.Strategy) error
 }
 
 var _ Publish = new(pubDao)
@@ -479,4 +481,20 @@ func (dao *pubDao) submit(kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOptio
 	}
 
 	return stgID, nil
+}
+
+// UpsertPublishWithTx publish with transaction
+func (dao *pubDao) UpsertPublishWithTx(
+	kit *kit.Kit, tx *gen.QueryTx, opt *types.PublishOption, stg *table.Strategy) error {
+	// add release publish num
+	if err := dao.updateReleasePublishInfo(kit, tx.Query, opt); err != nil {
+		logs.Errorf("increate release publish num failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+
+	if err := dao.upsertReleasedGroups(kit, tx.Query, opt, stg); err != nil {
+		logs.Errorf("upsert group current releases failed, err: %v, rid: %s", err, kit.Rid)
+		return err
+	}
+	return nil
 }

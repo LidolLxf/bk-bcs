@@ -155,6 +155,7 @@ const (
 	Config_Publish_FullMethodName                           = "/pbcs.Config/Publish"
 	Config_GenerateReleaseAndPublish_FullMethodName         = "/pbcs.Config/GenerateReleaseAndPublish"
 	Config_SubmitPublishApprove_FullMethodName              = "/pbcs.Config/SubmitPublishApprove"
+	Config_Approve_FullMethodName                           = "/pbcs.Config/Approve"
 	Config_GetLastSelect_FullMethodName                     = "/pbcs.Config/GetLastSelect"
 	Config_GetLastPublish_FullMethodName                    = "/pbcs.Config/GetLastPublish"
 	Config_GetReleasesStatus_FullMethodName                 = "/pbcs.Config/GetReleasesStatus"
@@ -343,6 +344,7 @@ type ConfigClient interface {
 	Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 	GenerateReleaseAndPublish(ctx context.Context, in *GenerateReleaseAndPublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 	SubmitPublishApprove(ctx context.Context, in *SubmitPublishApproveReq, opts ...grpc.CallOption) (*PublishResp, error)
+	Approve(ctx context.Context, in *ApproveReq, opts ...grpc.CallOption) (*ApproveResp, error)
 	GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error)
 	GetLastPublish(ctx context.Context, in *GetLastPublishReq, opts ...grpc.CallOption) (*GetLastPublishResp, error)
 	GetReleasesStatus(ctx context.Context, in *GetReleasesStatusReq, opts ...grpc.CallOption) (*strategy.Strategy, error)
@@ -1549,6 +1551,15 @@ func (c *configClient) SubmitPublishApprove(ctx context.Context, in *SubmitPubli
 	return out, nil
 }
 
+func (c *configClient) Approve(ctx context.Context, in *ApproveReq, opts ...grpc.CallOption) (*ApproveResp, error) {
+	out := new(ApproveResp)
+	err := c.cc.Invoke(ctx, Config_Approve_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *configClient) GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error) {
 	out := new(GetLastSelectResp)
 	err := c.cc.Invoke(ctx, Config_GetLastSelect_FullMethodName, in, out, opts...)
@@ -2055,6 +2066,7 @@ type ConfigServer interface {
 	Publish(context.Context, *PublishReq) (*PublishResp, error)
 	GenerateReleaseAndPublish(context.Context, *GenerateReleaseAndPublishReq) (*PublishResp, error)
 	SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error)
+	Approve(context.Context, *ApproveReq) (*ApproveResp, error)
 	GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error)
 	GetLastPublish(context.Context, *GetLastPublishReq) (*GetLastPublishResp, error)
 	GetReleasesStatus(context.Context, *GetReleasesStatusReq) (*strategy.Strategy, error)
@@ -2488,6 +2500,9 @@ func (UnimplementedConfigServer) GenerateReleaseAndPublish(context.Context, *Gen
 }
 func (UnimplementedConfigServer) SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitPublishApprove not implemented")
+}
+func (UnimplementedConfigServer) Approve(context.Context, *ApproveReq) (*ApproveResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Approve not implemented")
 }
 func (UnimplementedConfigServer) GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLastSelect not implemented")
@@ -4925,6 +4940,24 @@ func _Config_SubmitPublishApprove_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Config_Approve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConfigServer).Approve(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Config_Approve_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConfigServer).Approve(ctx, req.(*ApproveReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Config_GetLastSelect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetLastSelectReq)
 	if err := dec(in); err != nil {
@@ -6163,6 +6196,10 @@ var Config_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitPublishApprove",
 			Handler:    _Config_SubmitPublishApprove_Handler,
+		},
+		{
+			MethodName: "Approve",
+			Handler:    _Config_Approve_Handler,
 		},
 		{
 			MethodName: "GetLastSelect",

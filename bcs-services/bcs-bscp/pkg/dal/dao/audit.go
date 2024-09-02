@@ -42,6 +42,8 @@ type AuditDao interface {
 	// ListAuditsAppStrategy List audit apo strategy.
 	ListAuditsAppStrategy(
 		kit *kit.Kit, req *pbds.ListAuditsReq) ([]*types.ListAuditsAppStrategy, int64, error)
+	// UpdateByStrategyID update audit kv by strategyID.
+	UpdateByStrategyID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error
 }
 
 // AuditOption defines all the needed infos to audit a resource.
@@ -229,4 +231,11 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 	}
 
 	return result, nil
+}
+
+// UpdateByStrategyID update audit kv by strategyID.
+func (au *audit) UpdateByStrategyID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error {
+	s := tx.Audit
+	_, err := s.WithContext(kit.Ctx).Where(s.StrategyId.Eq(strategyID)).Updates(m)
+	return err
 }

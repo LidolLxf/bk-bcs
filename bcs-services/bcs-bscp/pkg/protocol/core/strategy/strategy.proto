@@ -13,6 +13,7 @@ message Strategy {
   StrategyState status = 3;
   StrategyAttachment attachment = 4;
   Revision revision = 5;
+  AppSpec app = 6;
 }
 
 // ReleaseSpec source resource reference: pkg/dal/table/release.go
@@ -65,4 +66,9 @@ message AuditStrategy {
   string approver = 5;
   string approver_progress = 6;
   string updated_at = 7;
+}
+
+// AppSpec app relate
+message AppSpec {
+  string creator = 1;
 }

@@ -842,6 +842,14 @@ option (google.api.http) = {
     };
   }
 
+  rpc Approve(ApproveReq) returns (ApproveResp) {
+    option (google.api.method_visibility).restriction = "BKAPIGW";
+    option (google.api.http) = {
+      post: "/api/v1/config/biz_id/{biz_id}/app_id/{app_id}/release_id/{release_id}/approve"
+      body: "*"
+    };
+  }
+
   rpc GetLastSelect(GetLastSelectReq) returns (GetLastSelectResp) {
     option (google.api.http) = {
       get: "/api/v1/config/biz_id/{biz_id}/app_id/{app_id}/last/select"
@@ -2788,6 +2796,18 @@ message SubmitPublishApproveReq {
   string group_name = 10;
   string publish_type = 11;
   string publish_time = 12;
+}
+
+message ApproveReq {
+  uint32 biz_id = 1;
+  uint32 app_id = 2;
+  uint32 release_id = 3;
+  string publish_status = 4;
+  string reason = 5;
+}
+
+message ApproveResp {
+  string status = 1;
 }
 
 message GetLastSelectReq {

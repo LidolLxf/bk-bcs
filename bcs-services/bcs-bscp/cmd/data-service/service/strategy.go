@@ -152,6 +152,12 @@ func (s *Service) GetReleasesStatus(ctx context.Context, req *pbds.GetReleasesSt
 		return nil, err
 	}
 
+	app, err := s.dao.App().GetByID(grpcKit, req.AppId)
+	if err != nil {
+		logs.Errorf("get app by id failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
 	// 该版本曾经上过线，后被分组重新上线覆盖了
 	if len(releasedGroups) == 0 && strategy.Spec.PublishStatus == table.AlreadyPublish {
 		strategy.Spec.PublishStatus = ""
@@ -167,6 +173,7 @@ func (s *Service) GetReleasesStatus(ctx context.Context, req *pbds.GetReleasesSt
 		Status:     pbstrategy.PbStrategyState(strategy.State),
 		Attachment: pbstrategy.PbStrategyAttachment(strategy.Attachment),
 		Revision:   pbstrategy.PbRevision(strategy.Revision),
+		App:        &pbstrategy.AppSpec{Creator: app.Revision.Creator},
 	}
 
 	return &resp, nil

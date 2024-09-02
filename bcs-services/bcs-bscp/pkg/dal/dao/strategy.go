@@ -22,6 +22,8 @@ import (
 type Strategy interface {
 	// Get last strategy.
 	GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (*table.Strategy, error)
+	// UpdateByID update strategy kv by id.
+	UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error
 }
 
 var _ Strategy = new(strategyDao)
@@ -32,9 +34,16 @@ type strategyDao struct {
 	auditDao AuditDao
 }
 
-// Get strategy kv.
+// GetLast Get strategy kv.
 func (dao *strategyDao) GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (*table.Strategy, error) {
 	m := dao.genQ.Strategy
 	return m.WithContext(kit.Ctx).Where(
 		m.BizID.Eq(bizID), m.AppID.Eq(appID), m.ReleaseID.Eq(releasedID)).Last()
+}
+
+// UpdateByID update strategy kv by id
+func (dao *strategyDao) UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error {
+	s := tx.Strategy
+	_, err := s.WithContext(kit.Ctx).Where(s.ID.Eq(strategyID)).Updates(m)
+	return err
 }

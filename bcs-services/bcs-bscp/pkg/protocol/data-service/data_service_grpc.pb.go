@@ -165,6 +165,7 @@ const (
 	Data_ListGroupReleasedApps_FullMethodName             = "/pbds.Data/ListGroupReleasedApps"
 	Data_Publish_FullMethodName                           = "/pbds.Data/Publish"
 	Data_SubmitPublishApprove_FullMethodName              = "/pbds.Data/SubmitPublishApprove"
+	Data_Approve_FullMethodName                           = "/pbds.Data/Approve"
 	Data_GetLastSelect_FullMethodName                     = "/pbds.Data/GetLastSelect"
 	Data_GetLastPublish_FullMethodName                    = "/pbds.Data/GetLastPublish"
 	Data_GetReleasesStatus_FullMethodName                 = "/pbds.Data/GetReleasesStatus"
@@ -368,6 +369,7 @@ type DataClient interface {
 	// publish related interface.
 	Publish(ctx context.Context, in *PublishReq, opts ...grpc.CallOption) (*PublishResp, error)
 	SubmitPublishApprove(ctx context.Context, in *SubmitPublishApproveReq, opts ...grpc.CallOption) (*PublishResp, error)
+	Approve(ctx context.Context, in *ApproveReq, opts ...grpc.CallOption) (*ApproveResp, error)
 	GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error)
 	GetLastPublish(ctx context.Context, in *GetLastPublishReq, opts ...grpc.CallOption) (*GetLastPublishResp, error)
 	GetReleasesStatus(ctx context.Context, in *GetReleasesStatusReq, opts ...grpc.CallOption) (*strategy.Strategy, error)
@@ -1631,6 +1633,15 @@ func (c *dataClient) SubmitPublishApprove(ctx context.Context, in *SubmitPublish
 	return out, nil
 }
 
+func (c *dataClient) Approve(ctx context.Context, in *ApproveReq, opts ...grpc.CallOption) (*ApproveResp, error) {
+	out := new(ApproveResp)
+	err := c.cc.Invoke(ctx, Data_Approve_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *dataClient) GetLastSelect(ctx context.Context, in *GetLastSelectReq, opts ...grpc.CallOption) (*GetLastSelectResp, error) {
 	out := new(GetLastSelectResp)
 	err := c.cc.Invoke(ctx, Data_GetLastSelect_FullMethodName, in, out, opts...)
@@ -2176,6 +2187,7 @@ type DataServer interface {
 	// publish related interface.
 	Publish(context.Context, *PublishReq) (*PublishResp, error)
 	SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error)
+	Approve(context.Context, *ApproveReq) (*ApproveResp, error)
 	GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error)
 	GetLastPublish(context.Context, *GetLastPublishReq) (*GetLastPublishResp, error)
 	GetReleasesStatus(context.Context, *GetReleasesStatusReq) (*strategy.Strategy, error)
@@ -2636,6 +2648,9 @@ func (UnimplementedDataServer) Publish(context.Context, *PublishReq) (*PublishRe
 }
 func (UnimplementedDataServer) SubmitPublishApprove(context.Context, *SubmitPublishApproveReq) (*PublishResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SubmitPublishApprove not implemented")
+}
+func (UnimplementedDataServer) Approve(context.Context, *ApproveReq) (*ApproveResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Approve not implemented")
 }
 func (UnimplementedDataServer) GetLastSelect(context.Context, *GetLastSelectReq) (*GetLastSelectResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLastSelect not implemented")
@@ -5172,6 +5187,24 @@ func _Data_SubmitPublishApprove_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Data_Approve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DataServer).Approve(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Data_Approve_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DataServer).Approve(ctx, req.(*ApproveReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Data_GetLastSelect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetLastSelectReq)
 	if err := dec(in); err != nil {
@@ -6484,6 +6517,10 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SubmitPublishApprove",
 			Handler:    _Data_SubmitPublishApprove_Handler,
+		},
+		{
+			MethodName: "Approve",
+			Handler:    _Data_Approve_Handler,
 		},
 		{
 			MethodName: "GetLastSelect",

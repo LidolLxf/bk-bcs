@@ -221,6 +221,10 @@ func (s *Service) SubmitPublishApprove(
 		return nil, err
 	}
 
+	if req.All {
+		groupName = []string{"all"}
+	}
+
 	// audit this to create strategy details
 	ad := s.dao.AuditDao().DecoratorV3(grpcKit, opt.BizID, &table.AuditField{
 		OperateWay: grpcKit.OperateWay,
@@ -249,6 +253,196 @@ func (s *Service) SubmitPublishApprove(
 		HaveCredentials:            haveCredentials,
 	}
 	return resp, nil
+}
+
+// Approve publish approve.
+func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.ApproveResp, error) {
+	grpcKit := kit.FromGrpcContext(ctx)
+
+	tx := s.dao.GenQuery().Begin()
+	defer func() {
+		if rErr := tx.Rollback(); rErr != nil {
+			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+		}
+	}()
+
+	release, err := s.dao.Release().Get(grpcKit, req.BizId, req.AppId, req.ReleaseId)
+	if err != nil {
+		return nil, err
+	}
+	if release.Spec.Deprecated {
+		return nil, fmt.Errorf("release %s is deprecated, can not be revoke", release.Spec.Name)
+	}
+
+	strategy, err := s.dao.Strategy().GetLast(grpcKit, req.BizId, req.AppId, req.ReleaseId)
+	if err != nil {
+		return nil, err
+	}
+
+	var updateContent map[string]interface{}
+	switch req.PublishStatus {
+	case string(table.RevokedPublish):
+		updateContent, err = s.revokeApprove(grpcKit, req, strategy)
+		if err != nil {
+			return nil, err
+		}
+	case string(table.RejectedApproval):
+		updateContent, err = s.rejectApprove(grpcKit, req, strategy)
+		if err != nil {
+			return nil, err
+		}
+	case string(table.PendPublish):
+		updateContent, err = s.passApprove(grpcKit, tx, req, strategy)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("invalid publish_status: %s", req.PublishStatus)
+	}
+
+	err = s.dao.Strategy().UpdateByID(grpcKit, tx, strategy.ID, updateContent)
+	if err != nil {
+		return nil, err
+	}
+
+	// update audit details
+	err = s.dao.AuditDao().UpdateByStrategyID(grpcKit, tx, strategy.ID, map[string]interface{}{
+		"status": updateContent["publish_status"],
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		logs.Errorf("commit transaction failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+	return &pbds.ApproveResp{
+		Status: "ok",
+	}, nil
+}
+
+// revokeApprove revoke publish approve.
+func (s *Service) revokeApprove(
+	kit *kit.Kit, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	app, err := s.dao.App().Get(kit, req.BizId, req.AppId)
+	if err != nil {
+		return nil, err
+	}
+
+	// 有服务权限的人才能撤销
+	if app.Revision.Creator != kit.User {
+		return nil, errors.New("no permission to revoke")
+	}
+
+	// 只有待上线以及待审批的类型才允许撤回
+	if strategy.Spec.PublishStatus != table.PendPublish && strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("revoked not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	return map[string]interface{}{
+		"publish_status": table.RevokedPublish,
+		"reject_reason":  req.Reason,
+	}, nil
+}
+
+// rejectApprove reject publish approve.
+func (s *Service) rejectApprove(
+	kit *kit.Kit, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("rejected not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	// 判断是否在审批人队列
+	isApprover := false
+	users := strings.Split(strategy.Spec.ApproverProgress, ",")
+	for _, v := range users {
+		if v == kit.User {
+			isApprover = true
+		}
+
+	}
+
+	// 需要审批但不是审批人的情况返回无权限审批
+	if !isApprover {
+		return nil, errors.New("no permission to approve")
+	}
+
+	return map[string]interface{}{
+		"publish_status": table.RejectedApproval,
+		"reject_reason":  req.Reason,
+	}, nil
+}
+
+// passApprove pass publish approve.
+func (s *Service) passApprove(
+	kit *kit.Kit, tx *gen.QueryTx, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("pass not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	// 存在app更改成不审批的情况，要根据审批人进度来确定是会签还是或签
+	// 判断是否在审批人队列
+	isApprover := false
+	approverUsers := strings.Split(strategy.Spec.Approver, ",")
+	approverProgress := strategy.Spec.ApproverProgress
+	progressUsers := strings.Split(approverProgress, ",")
+	for _, v := range progressUsers {
+		if v == kit.User {
+			isApprover = true
+		}
+	}
+
+	// 不是审批人的情况返回无权限审批
+	if !isApprover {
+		return nil, errors.New("no permission to approve")
+	}
+
+	publishStatus := table.PendApproval
+	// 或签通过
+	if len(approverUsers) == len(progressUsers) {
+		publishStatus = table.PendPublish
+	} else {
+		for id, v := range approverUsers {
+			// 最后一个的情况下，直接待上线
+			if v == kit.User && id == len(progressUsers)-1 {
+				publishStatus = table.PendPublish
+			} else if v == kit.User {
+				// 下一个审批人
+				approverProgress = progressUsers[id+1]
+			}
+		}
+
+	}
+
+	// 自动上线则直接上线
+	if publishStatus == table.PendPublish && strategy.Spec.PublishType == table.Automatically {
+		opt := types.PublishOption{
+			BizID:     req.BizId,
+			AppID:     req.AppId,
+			ReleaseID: req.ReleaseId,
+			All:       false,
+		}
+
+		if len(strategy.Spec.Scope.Groups) == 0 {
+			opt.All = true
+		}
+
+		err := s.dao.Publish().UpsertPublishWithTx(kit, tx, &opt, strategy)
+
+		if err != nil {
+			return nil, err
+		}
+		publishStatus = table.AlreadyPublish
+	}
+
+	return map[string]interface{}{
+		"publish_status":    publishStatus,
+		"approver_progress": approverProgress,
+	}, nil
 }
 
 // parse publish option
