@@ -296,6 +296,11 @@ func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.Appr
 		if err != nil {
 			return nil, err
 		}
+	case string(table.AlreadyPublish):
+		updateContent, err = s.publishApprove(grpcKit, tx, req, strategy)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("invalid publish_status: %s", req.PublishStatus)
 	}
@@ -408,11 +413,12 @@ func (s *Service) passApprove(
 	} else {
 		for id, v := range approverUsers {
 			// 最后一个的情况下，直接待上线
-			if v == kit.User && id == len(progressUsers)-1 {
+			if v == kit.User && id == len(approverUsers)-1 {
 				publishStatus = table.PendPublish
 			} else if v == kit.User {
 				// 下一个审批人
-				approverProgress = progressUsers[id+1]
+				approverProgress = approverUsers[id+1]
+				break
 			}
 		}
 
@@ -442,6 +448,37 @@ func (s *Service) passApprove(
 	return map[string]interface{}{
 		"publish_status":    publishStatus,
 		"approver_progress": approverProgress,
+	}, nil
+}
+
+// publishApprove publish approve.
+func (s *Service) publishApprove(
+	kit *kit.Kit, tx *gen.QueryTx, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendPublish {
+		return nil, fmt.Errorf("publish not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	opt := types.PublishOption{
+		BizID:     req.BizId,
+		AppID:     req.AppId,
+		ReleaseID: req.ReleaseId,
+		All:       false,
+	}
+
+	if len(strategy.Spec.Scope.Groups) == 0 {
+		opt.All = true
+	}
+
+	err := s.dao.Publish().UpsertPublishWithTx(kit, tx, &opt, strategy)
+
+	if err != nil {
+		return nil, err
+	}
+	publishStatus := table.AlreadyPublish
+
+	return map[string]interface{}{
+		"publish_status": publishStatus,
 	}, nil
 }
 
