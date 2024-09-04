@@ -101,6 +101,19 @@ service Cache {
       body: "*"
     };
   }
+
+  rpc GetPublishTime(GetPublishTimeReq) returns (GetPublishTimeResp) {
+    option (google.api.http) = {
+      get: "/api/v1/cache/biz/{biz_id}/publish_time"
+    };
+  }
+
+  rpc SetPublishTime(SetPublishTimeReq) returns (SetPublishTimeResp) {
+    option (google.api.http) = {
+      post: "/api/v1/cache/biz/{biz_id}/publish_time"
+      body: "*"
+    };
+  }
 }
 
 message JsonRawResp {
@@ -231,3 +244,23 @@ message SetClientMetricReq {
 }
 
 message SetClientMetricResp {}
+
+message GetPublishTimeReq {
+  uint32 biz_id = 1;
+  int64 publish_time = 2;
+}
+
+message GetPublishTimeResp {
+  int64 publish_time = 1;
+  repeated uint32 strategy_id = 2;
+}
+
+message SetPublishTimeReq {
+  uint32 biz_id = 1;
+  uint32 strategy_id = 2;
+  int64 publish_time = 3;
+}
+
+message SetPublishTimeResp {
+  int64 result = 1;
+}

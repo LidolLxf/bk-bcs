@@ -305,6 +305,7 @@ func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.Appr
 		return nil, fmt.Errorf("invalid publish_status: %s", req.PublishStatus)
 	}
 
+	updateContent["reviser"] = grpcKit.User
 	err = s.dao.Strategy().UpdateByID(grpcKit, tx, strategy.ID, updateContent)
 	if err != nil {
 		return nil, err
@@ -478,6 +479,7 @@ func (s *Service) publishApprove(
 	publishStatus := table.AlreadyPublish
 
 	return map[string]interface{}{
+		"pub_state":      table.Publishing,
 		"publish_status": publishStatus,
 	}, nil
 }

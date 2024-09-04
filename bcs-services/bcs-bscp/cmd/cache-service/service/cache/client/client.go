@@ -16,6 +16,8 @@ package client
 import (
 	"context"
 
+	"github.com/go-redis/redis/v8"
+
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/cmd/cache-service/service/cache/keys"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/bedis"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/dao"
@@ -42,6 +44,8 @@ type Interface interface {
 	GetReleasedKvValue(kt *kit.Kit, bizID, appID, releaseID uint32, key string) (string, error)
 	SetClientMetric(kt *kit.Kit, bizID, appID uint32, payload []byte) error
 	BatchUpsertClientMetrics(kt *kit.Kit, clientData []*pbclient.Client, clientEventData []*pbce.ClientEvent) error
+	GetPublishTime(kt *kit.Kit, bizID uint32, publishTime int64) ([]redis.Z, error)
+	SetPublishTime(kt *kit.Kit, bizID uint32, publishTime int64, strategyId uint32) (int64, error)
 }
 
 // New initialize a cache client.

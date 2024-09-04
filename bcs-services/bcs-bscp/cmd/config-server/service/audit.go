@@ -38,15 +38,21 @@ func (s *Service) ListAudits(ctx context.Context, req *pbcs.ListAuditsReq) (
 	}
 
 	r := &pbds.ListAuditsReq{
-		BizId:       req.BizId,
-		AppId:       req.AppId,
-		StartTime:   req.StartTime,
-		EndTime:     req.EndTime,
-		Operate:     req.Operate,
-		SearchValue: req.SearchValue,
-		Start:       req.Start,
-		Limit:       req.Limit,
-		All:         req.All,
+		BizId:        req.BizId,
+		AppId:        req.AppId,
+		StartTime:    req.StartTime,
+		EndTime:      req.EndTime,
+		Operate:      req.Operate,
+		OperateWay:   req.OperateWay,
+		Start:        req.Start,
+		Limit:        req.Limit,
+		All:          req.All,
+		Name:         req.Name,
+		ResourceType: req.ResourceType,
+		Action:       req.Action,
+		ResInstance:  req.ResInstance,
+		Status:       req.Status,
+		Operator:     req.Operator,
 	}
 	rp, err := s.client.DS.ListAudits(grpcKit.RpcCtx(), r)
 	if err != nil {

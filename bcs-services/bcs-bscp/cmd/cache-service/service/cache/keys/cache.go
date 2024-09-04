@@ -49,6 +49,7 @@ const (
 	appID               namespace = "app-id"
 	releasedKv          namespace = "released-kv"
 	clientMetric        namespace = "client-metric"
+	publish             namespace = "publish"
 )
 
 type keyGenerator struct {
@@ -220,6 +221,15 @@ func (k keyGenerator) AppMeta(bizID uint32, appID uint32) string {
 		biz: bizID,
 		ns:  appMeta,
 		key: strconv.FormatUint(uint64(appID), 10),
+	}.String()
+}
+
+// PublishTime generate the publish time cache key.
+func (k keyGenerator) PublishTime(bizID uint32) string {
+	return element{
+		biz: bizID,
+		ns:  publish,
+		key: "publish-time",
 	}.String()
 }
 

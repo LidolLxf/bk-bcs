@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	prm "github.com/prometheus/client_golang/prometheus"
 )
 
@@ -561,4 +562,41 @@ func (bs *bedis) LTrim(ctx context.Context, key string, start, stop int64) (stri
 	bs.mc.cmdLagMS.With(prm.Labels{"cmd": "ltrim"}).Observe(float64(time.Since(startTime).Milliseconds()))
 
 	return value, nil
+}
+
+// ZAdd Redis `ZADD key score member [score member ...]` command.
+func (bs *bedis) ZAdd(ctx context.Context, key string, score float64, value interface{}) (int64, error) {
+	startTime := time.Now()
+	r, err := bs.client.ZAdd(ctx, key, &redis.Z{
+		Score:  score,
+		Member: value,
+	}).Result()
+	if err != nil {
+		if IsNilError(err) {
+			return 0, nil
+		}
+		bs.mc.errCounter.With(prm.Labels{"cmd": "zadd"}).Inc()
+		return 0, err
+	}
+	bs.logSlowCmd(ctx, "", time.Since(startTime))
+	bs.mc.cmdLagMS.With(prm.Labels{"cmd": "zadd"}).Observe(float64(time.Since(startTime).Milliseconds()))
+
+	return r, nil
+}
+
+// ZRangeWithScores zrange with scores
+func (bs *bedis) ZRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error) {
+	startTime := time.Now()
+	r, err := bs.client.ZRangeWithScores(ctx, key, start, stop).Result()
+	if err != nil {
+		if IsNilError(err) {
+			return []redis.Z{}, nil
+		}
+		bs.mc.errCounter.With(prm.Labels{"cmd": "zrange withscores"}).Inc()
+		return []redis.Z{}, err
+	}
+	bs.logSlowCmd(ctx, "", time.Since(startTime))
+	bs.mc.cmdLagMS.With(prm.Labels{"cmd": "zrange withscores"}).Observe(float64(time.Since(startTime).Milliseconds()))
+
+	return r, nil
 }

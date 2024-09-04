@@ -65,9 +65,9 @@ type ListAuditDetails struct {
 
 // ListAuditsAppStrategy defines the model of audits app strategy
 type ListAuditsAppStrategy struct {
-	App   AppPart   `json:"app" gorm:"embedded"`
-	Audit AuditPart `json:"audit" gorm:"embedded"`
 	// Name is application's name
+	App      AppPart      `json:"app" gorm:"embedded"`
+	Audit    AuditPart    `json:"audit" gorm:"embedded"`
 	Strategy StrategyPart `json:"strategy" gorm:"embedded"`
 }
 
@@ -102,4 +102,5 @@ type StrategyPart struct {
 	Approver         string    `db:"approver" json:"approver" approver:"column:approver"`
 	ApproverProgress string    `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at" gorm:"column:updated_at"`
+	Reviser          string    `db:"reviser" json:"reviser" gorm:"column:reviser"`
 }

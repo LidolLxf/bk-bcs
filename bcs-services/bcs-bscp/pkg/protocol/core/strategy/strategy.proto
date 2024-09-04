@@ -66,6 +66,7 @@ message AuditStrategy {
   string approver = 5;
   string approver_progress = 6;
   string updated_at = 7;
+  string reviser = 8;
 }
 
 // AppSpec app relate

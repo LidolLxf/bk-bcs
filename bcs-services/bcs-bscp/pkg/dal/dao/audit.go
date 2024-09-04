@@ -173,15 +173,18 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 	app := au.genQ.App
 	strategy := au.genQ.Strategy
 
+	// 后续改造中去掉audit.ResourceType.In，现在加上为了适配原来的数据
 	result := audit.WithContext(kit.Ctx).Select(audit.ID, audit.ResourceType, audit.ResourceID, audit.Action,
 		audit.BizID, audit.AppID, audit.Operator, audit.CreatedAt, audit.ResInstance, audit.OperateWay, audit.Status,
 		app.Name, app.Creator,
-		strategy.PublishType, strategy.PublishTime, strategy.PublishTime,
+		strategy.PublishType.As("publish_type"), strategy.PublishTime, strategy.PublishTime,
 		strategy.PublishStatus, strategy.RejectReason, strategy.Approver, strategy.ApproverProgress,
-		strategy.UpdatedAt).
+		strategy.UpdatedAt, strategy.Reviser).
 		LeftJoin(app, app.ID.EqCol(audit.AppID)).
 		LeftJoin(strategy, strategy.ID.EqCol(audit.StrategyId)).
-		Where(audit.BizID.Eq(req.BizId))
+		Where(audit.BizID.Eq(req.BizId), audit.ResourceType.In(string(enumor.ResAppConfig), string(enumor.ResGroup),
+			string(enumor.ResHook), string(enumor.ResTemplate), string(enumor.ResVariable),
+			string(enumor.ResCredential), string(enumor.ResInstance)))
 
 	// if not query all app, need current app_id
 	if !req.All {
@@ -215,19 +218,32 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 		result = result.Where(audit.Status.Eq(req.Operate))
 	}
 
-	app.WithContext(kit.Ctx).Or(app.Name.Like("%" + req.SearchValue + "%"))
-	audit.WithContext(kit.Ctx).Or()
+	if req.Name != "" {
+		result = result.Where(app.Name.Like("%" + req.Name + "%"))
+	}
 
-	if req.SearchValue != "" {
-		search := app.WithContext(kit.Ctx).
-			Or(app.Name.Like("%" + req.SearchValue + "%")).
-			Or(audit.ResourceType.Like("%" + req.SearchValue + "%")).
-			Or(audit.Action.Like("%" + req.SearchValue + "%")).
-			Or(audit.ResInstance.Like("%" + req.SearchValue + "%")).
-			Or(audit.Status.Like("%" + req.SearchValue + "%")).
-			Or(audit.Operator.Like("%" + req.SearchValue + "%")).
-			Or(audit.OperateWay.Like("%" + req.SearchValue + "%"))
-		result = result.Where(search)
+	if req.ResourceType != "" {
+		result = result.Where(audit.ResourceType.Like("%" + req.ResourceType + "%"))
+	}
+
+	if req.Action != "" {
+		result = result.Where(audit.Action.Like("%" + req.Action + "%"))
+	}
+
+	if req.ResInstance != "" {
+		result = result.Where(audit.ResInstance.Like("%" + req.ResInstance + "%"))
+	}
+
+	if req.Status != "" {
+		result = result.Where(audit.Status.Like("%" + req.Status + "%"))
+	}
+
+	if req.Operator != "" {
+		result = result.Where(audit.Operator.Like("%" + req.Operator + "%"))
+	}
+
+	if req.OperateWay != "" {
+		result = result.Where(audit.OperateWay.Like("%" + req.OperateWay + "%"))
 	}
 
 	return result, nil

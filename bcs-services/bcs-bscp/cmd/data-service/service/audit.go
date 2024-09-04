@@ -77,6 +77,7 @@ func (s *Service) ListAudits(ctx context.Context, req *pbds.ListAuditsReq) (*pbd
 				Approver:         value.Strategy.Approver,
 				ApproverProgress: value.Strategy.ApproverProgress,
 				UpdatedAt:        value.Strategy.UpdatedAt.Format(time.DateTime),
+				Reviser:          value.Strategy.Reviser,
 			},
 			App: &pbapp.AuditApp{
 				Name:    value.App.Name,
