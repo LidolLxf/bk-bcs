@@ -15,6 +15,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/errf"
@@ -238,27 +239,12 @@ func (s *Service) SetClientMetric(ctx context.Context, req *pbcs.SetClientMetric
 	return &pbcs.SetClientMetricResp{}, nil
 }
 
-// GetPublishTime get publish time
-func (s *Service) GetPublishTime(ctx context.Context, req *pbcs.GetPublishTimeReq) (*pbcs.GetPublishTimeResp,
-	error) {
-	kt := kit.FromGrpcContext(ctx)
-	result, err := s.op.GetPublishTime(kt, req.BizId, req.PublishTime)
-	if err != nil {
-		return nil, err
-	}
-	var resp pbcs.GetPublishTimeResp
-	resp.PublishTime = req.PublishTime
-	for _, v := range result {
-		resp.StrategyId = append(resp.StrategyId, getStrategyIdUint32(v.Member))
-	}
-	return &resp, nil
-}
 
 // SetPublishTime set publish time
 func (s *Service) SetPublishTime(ctx context.Context, req *pbcs.SetPublishTimeReq) (*pbcs.SetPublishTimeResp,
 	error) {
 	kt := kit.FromGrpcContext(ctx)
-	result, err := s.op.SetPublishTime(kt, req.BizId, req.GetPublishTime(), req.StrategyId)
+	result, err := s.op.SetPublishTime(kt, req.BizId, req.AppId, req.StrategyId, req.GetPublishTime())
 	if err != nil {
 		return nil, err
 	}
@@ -266,11 +252,4 @@ func (s *Service) SetPublishTime(ctx context.Context, req *pbcs.SetPublishTimeRe
 		Result: result,
 	}
 	return &resp, nil
-}
-
-func getStrategyIdUint32(v interface{}) uint32 {
-	if v, ok := v.(uint32); ok {
-		return v
-	}
-	return 0
 }

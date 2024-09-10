@@ -44,6 +44,9 @@ type AuditDao interface {
 		kit *kit.Kit, req *pbds.ListAuditsReq) ([]*types.ListAuditsAppStrategy, int64, error)
 	// UpdateByStrategyID update audit kv by strategyID.
 	UpdateByStrategyID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error
+	// UpdateByStrategyIDs update audit kv by strategyIDs.
+	UpdateByStrategyIDs(
+		kit *kit.Kit, tx *gen.QueryTx, strategyID []uint32, m map[string]interface{}) error
 }
 
 // AuditOption defines all the needed infos to audit a resource.
@@ -179,7 +182,7 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 		app.Name, app.Creator,
 		strategy.PublishType.As("publish_type"), strategy.PublishTime, strategy.PublishTime,
 		strategy.PublishStatus, strategy.RejectReason, strategy.Approver, strategy.ApproverProgress,
-		strategy.UpdatedAt, strategy.Reviser).
+		strategy.UpdatedAt, strategy.Reviser, strategy.ReleaseID, strategy.Scope).
 		LeftJoin(app, app.ID.EqCol(audit.AppID)).
 		LeftJoin(strategy, strategy.ID.EqCol(audit.StrategyId)).
 		Where(audit.BizID.Eq(req.BizId), audit.ResourceType.In(string(enumor.ResAppConfig), string(enumor.ResGroup),
@@ -253,5 +256,16 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 func (au *audit) UpdateByStrategyID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error {
 	s := tx.Audit
 	_, err := s.WithContext(kit.Ctx).Where(s.StrategyId.Eq(strategyID)).Updates(m)
+	return err
+}
+
+// UpdateByStrategyIDs update audit kv by strategyIDs.
+func (au *audit) UpdateByStrategyIDs(
+	kit *kit.Kit, tx *gen.QueryTx, strategyIDs []uint32, m map[string]interface{}) error {
+	if len(strategyIDs) == 0 {
+		return nil
+	}
+	s := tx.Audit
+	_, err := s.WithContext(kit.Ctx).Where(s.StrategyId.In(strategyIDs...)).Updates(m)
 	return err
 }

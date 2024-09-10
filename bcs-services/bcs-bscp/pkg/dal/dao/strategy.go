@@ -22,8 +22,13 @@ import (
 type Strategy interface {
 	// Get last strategy.
 	GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (*table.Strategy, error)
+	// GetStrategyByIDs Get strategy by ids.
+	GetStrategyByIDs(kit *kit.Kit, strategyIDs []uint32) ([]*table.Strategy, error)
 	// UpdateByID update strategy kv by id.
 	UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error
+	// UpdateByIDs update strategy kv by ids
+	UpdateByIDs(
+		kit *kit.Kit, tx *gen.QueryTx, strategyID []uint32, m map[string]interface{}) error
 }
 
 var _ Strategy = new(strategyDao)
@@ -41,9 +46,26 @@ func (dao *strategyDao) GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (
 		m.BizID.Eq(bizID), m.AppID.Eq(appID), m.ReleaseID.Eq(releasedID)).Last()
 }
 
+// GetStrategyByIDs Get strategy by ids.
+func (dao *strategyDao) GetStrategyByIDs(kit *kit.Kit, strategyIDs []uint32) ([]*table.Strategy, error) {
+	m := dao.genQ.Strategy
+	return m.WithContext(kit.Ctx).Where(m.ID.In(strategyIDs...)).Find()
+}
+
 // UpdateByID update strategy kv by id
 func (dao *strategyDao) UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error {
 	s := tx.Strategy
 	_, err := s.WithContext(kit.Ctx).Where(s.ID.Eq(strategyID)).Updates(m)
+	return err
+}
+
+// UpdateByIDs update strategy kv by ids
+func (dao *strategyDao) UpdateByIDs(
+	kit *kit.Kit, tx *gen.QueryTx, strategyIDs []uint32, m map[string]interface{}) error {
+	if len(strategyIDs) == 0 {
+		return nil
+	}
+	s := tx.Strategy
+	_, err := s.WithContext(kit.Ctx).Where(s.ID.In(strategyIDs...)).Updates(m)
 	return err
 }

@@ -102,12 +102,6 @@ service Cache {
     };
   }
 
-  rpc GetPublishTime(GetPublishTimeReq) returns (GetPublishTimeResp) {
-    option (google.api.http) = {
-      get: "/api/v1/cache/biz/{biz_id}/publish_time"
-    };
-  }
-
   rpc SetPublishTime(SetPublishTimeReq) returns (SetPublishTimeResp) {
     option (google.api.http) = {
       post: "/api/v1/cache/biz/{biz_id}/publish_time"
@@ -245,20 +239,11 @@ message SetClientMetricReq {
 
 message SetClientMetricResp {}
 
-message GetPublishTimeReq {
-  uint32 biz_id = 1;
-  int64 publish_time = 2;
-}
-
-message GetPublishTimeResp {
-  int64 publish_time = 1;
-  repeated uint32 strategy_id = 2;
-}
-
 message SetPublishTimeReq {
   uint32 biz_id = 1;
   uint32 strategy_id = 2;
   int64 publish_time = 3;
+  uint32 app_id = 4;
 }
 
 message SetPublishTimeResp {

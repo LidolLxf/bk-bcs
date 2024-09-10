@@ -95,12 +95,14 @@ type AuditPart struct {
 
 // StrategyPart defines strategy fields
 type StrategyPart struct {
-	PublishType      string    `db:"publish_type" json:"publish_type" gorm:"column:publish_type"`
-	PublishTime      string    `db:"publish_time" json:"publish_time" gorm:"column:publish_time"`
-	PublishStatus    string    `db:"publish_status" json:"publish_status" gorm:"column:publish_status"`
-	RejectReason     string    `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
-	Approver         string    `db:"approver" json:"approver" approver:"column:approver"`
-	ApproverProgress string    `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
-	UpdatedAt        time.Time `db:"updated_at" json:"updated_at" gorm:"column:updated_at"`
-	Reviser          string    `db:"reviser" json:"reviser" gorm:"column:reviser"`
+	PublishType      string      `db:"publish_type" json:"publish_type" gorm:"column:publish_type"`
+	PublishTime      string      `db:"publish_time" json:"publish_time" gorm:"column:publish_time"`
+	PublishStatus    string      `db:"publish_status" json:"publish_status" gorm:"column:publish_status"`
+	RejectReason     string      `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
+	Approver         string      `db:"approver" json:"approver" approver:"column:approver"`
+	ApproverProgress string      `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
+	UpdatedAt        time.Time   `db:"updated_at" json:"updated_at" gorm:"column:updated_at"`
+	Reviser          string      `db:"reviser" json:"reviser" gorm:"column:reviser"`
+	ReleaseId        uint32      `db:"reviser" json:"release_id" gorm:"column:release_id"`
+	Scope            table.Scope `db:"scope" json:"scope" gorm:"column:scope"`
 }

@@ -27,6 +27,7 @@ import (
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/logs"
+	pbcs "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/cache-service"
 	pbgroup "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/group"
 	pbds "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/data-service"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/runtime/selector"
@@ -237,12 +238,22 @@ func (s *Service) SubmitPublishApprove(
 		AppId:      app.AppID(),
 		StrategyId: pshID,
 	}).PrepareCreateByInstance(pshID, req)
-	if err := ad.Do(tx.Query); err != nil {
+	if err = ad.Do(tx.Query); err != nil {
 		if rErr := tx.Rollback(); rErr != nil {
 			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
 		}
 		return nil, err
 	}
+
+	// 定时上线
+	err = s.setPublishTime(grpcKit, pshID, req)
+	if err != nil {
+		if rErr := tx.Rollback(); rErr != nil {
+			logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+		}
+		return nil, err
+	}
+
 	if err := tx.Commit(); err != nil {
 		logs.Errorf("commit transaction failed, err: %v, rid: %s", err, grpcKit.Rid)
 		return nil, err
@@ -253,6 +264,31 @@ func (s *Service) SubmitPublishApprove(
 		HaveCredentials:            haveCredentials,
 	}
 	return resp, nil
+}
+
+// 定时上线
+func (s *Service) setPublishTime(kt *kit.Kit, pshID uint32, req *pbds.SubmitPublishApproveReq) error {
+	if req.PublishType == string(table.Periodically) {
+		// 通过当前时区计算unix
+		location := time.Now().Location()
+		publishTime, err := time.ParseInLocation(time.DateTime, req.PublishTime, location)
+		if err != nil {
+			logs.Errorf("parse time failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		_, err = s.cs.SetPublishTime(kt.Ctx, &pbcs.SetPublishTimeReq{
+			BizId:       req.BizId,
+			StrategyId:  pshID,
+			PublishTime: publishTime.UTC().Unix(),
+			AppId:       req.AppId,
+		})
+		if err != nil {
+			logs.Errorf("set publish time failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+	return nil
 }
 
 // Approve publish approve.

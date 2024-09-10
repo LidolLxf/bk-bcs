@@ -584,10 +584,10 @@ func (bs *bedis) ZAdd(ctx context.Context, key string, score float64, value inte
 	return r, nil
 }
 
-// ZRangeWithScores zrange with scores
-func (bs *bedis) ZRangeWithScores(ctx context.Context, key string, start, stop int64) ([]redis.Z, error) {
+// ZRangeByScoreWithScores zrangebyscore with scores
+func (bs *bedis) ZRangeByScoreWithScores(ctx context.Context, key string, zRangeBy *redis.ZRangeBy) ([]redis.Z, error) {
 	startTime := time.Now()
-	r, err := bs.client.ZRangeWithScores(ctx, key, start, stop).Result()
+	r, err := bs.client.ZRangeByScoreWithScores(ctx, key, zRangeBy).Result()
 	if err != nil {
 		if IsNilError(err) {
 			return []redis.Z{}, nil
@@ -597,6 +597,23 @@ func (bs *bedis) ZRangeWithScores(ctx context.Context, key string, start, stop i
 	}
 	bs.logSlowCmd(ctx, "", time.Since(startTime))
 	bs.mc.cmdLagMS.With(prm.Labels{"cmd": "zrange withscores"}).Observe(float64(time.Since(startTime).Milliseconds()))
+
+	return r, nil
+}
+
+// ZRem delete zset member
+func (bs *bedis) ZRem(ctx context.Context, key string, members ...interface{}) (int64, error) {
+	startTime := time.Now()
+	r, err := bs.client.ZRem(ctx, key, members...).Result()
+	if err != nil {
+		if IsNilError(err) {
+			return 0, nil
+		}
+		bs.mc.errCounter.With(prm.Labels{"cmd": "zrem"}).Inc()
+		return 0, err
+	}
+	bs.logSlowCmd(ctx, "", time.Since(startTime))
+	bs.mc.cmdLagMS.With(prm.Labels{"cmd": "zrem"}).Observe(float64(time.Since(startTime).Milliseconds()))
 
 	return r, nil
 }

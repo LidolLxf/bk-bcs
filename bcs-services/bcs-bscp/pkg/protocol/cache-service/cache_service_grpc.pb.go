@@ -34,7 +34,6 @@ const (
 	Cache_GetReleasedKv_FullMethodName            = "/pbcs.Cache/GetReleasedKv"
 	Cache_GetReleasedKvValue_FullMethodName       = "/pbcs.Cache/GetReleasedKvValue"
 	Cache_SetClientMetric_FullMethodName          = "/pbcs.Cache/SetClientMetric"
-	Cache_GetPublishTime_FullMethodName           = "/pbcs.Cache/GetPublishTime"
 	Cache_SetPublishTime_FullMethodName           = "/pbcs.Cache/SetPublishTime"
 )
 
@@ -57,7 +56,6 @@ type CacheClient interface {
 	GetReleasedKv(ctx context.Context, in *GetReleasedKvReq, opts ...grpc.CallOption) (*JsonRawResp, error)
 	GetReleasedKvValue(ctx context.Context, in *GetReleasedKvValueReq, opts ...grpc.CallOption) (*JsonRawResp, error)
 	SetClientMetric(ctx context.Context, in *SetClientMetricReq, opts ...grpc.CallOption) (*SetClientMetricResp, error)
-	GetPublishTime(ctx context.Context, in *GetPublishTimeReq, opts ...grpc.CallOption) (*GetPublishTimeResp, error)
 	SetPublishTime(ctx context.Context, in *SetPublishTimeReq, opts ...grpc.CallOption) (*SetPublishTimeResp, error)
 }
 
@@ -195,15 +193,6 @@ func (c *cacheClient) SetClientMetric(ctx context.Context, in *SetClientMetricRe
 	return out, nil
 }
 
-func (c *cacheClient) GetPublishTime(ctx context.Context, in *GetPublishTimeReq, opts ...grpc.CallOption) (*GetPublishTimeResp, error) {
-	out := new(GetPublishTimeResp)
-	err := c.cc.Invoke(ctx, Cache_GetPublishTime_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *cacheClient) SetPublishTime(ctx context.Context, in *SetPublishTimeReq, opts ...grpc.CallOption) (*SetPublishTimeResp, error) {
 	out := new(SetPublishTimeResp)
 	err := c.cc.Invoke(ctx, Cache_SetPublishTime_FullMethodName, in, out, opts...)
@@ -232,7 +221,6 @@ type CacheServer interface {
 	GetReleasedKv(context.Context, *GetReleasedKvReq) (*JsonRawResp, error)
 	GetReleasedKvValue(context.Context, *GetReleasedKvValueReq) (*JsonRawResp, error)
 	SetClientMetric(context.Context, *SetClientMetricReq) (*SetClientMetricResp, error)
-	GetPublishTime(context.Context, *GetPublishTimeReq) (*GetPublishTimeResp, error)
 	SetPublishTime(context.Context, *SetPublishTimeReq) (*SetPublishTimeResp, error)
 }
 
@@ -281,9 +269,6 @@ func (UnimplementedCacheServer) GetReleasedKvValue(context.Context, *GetReleased
 }
 func (UnimplementedCacheServer) SetClientMetric(context.Context, *SetClientMetricReq) (*SetClientMetricResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetClientMetric not implemented")
-}
-func (UnimplementedCacheServer) GetPublishTime(context.Context, *GetPublishTimeReq) (*GetPublishTimeResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetPublishTime not implemented")
 }
 func (UnimplementedCacheServer) SetPublishTime(context.Context, *SetPublishTimeReq) (*SetPublishTimeResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPublishTime not implemented")
@@ -552,24 +537,6 @@ func _Cache_SetClientMetric_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Cache_GetPublishTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPublishTimeReq)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CacheServer).GetPublishTime(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Cache_GetPublishTime_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CacheServer).GetPublishTime(ctx, req.(*GetPublishTimeReq))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Cache_SetPublishTime_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetPublishTimeReq)
 	if err := dec(in); err != nil {
@@ -650,10 +617,6 @@ var Cache_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetClientMetric",
 			Handler:    _Cache_SetClientMetric_Handler,
-		},
-		{
-			MethodName: "GetPublishTime",
-			Handler:    _Cache_GetPublishTime_Handler,
 		},
 		{
 			MethodName: "SetPublishTime",

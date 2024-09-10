@@ -13,32 +13,60 @@
 package client
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/cmd/cache-service/service/cache/keys"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
 	"github.com/go-redis/redis/v8"
 )
 
+// PublishInfo publish info
+type PublishInfo struct {
+	Key         string
+	PublishTime int64
+}
+
 // GetPublishTime get publish time
-func (c *client) GetPublishTime(kt *kit.Kit, bizID uint32, publishTime int64) ([]redis.Z, error) {
-	return c.bds.ZRangeWithScores(kt.Ctx, keys.Key.PublishTime(bizID), publishTime, publishTime+1)
+func (c *client) GetPublishTime(kt *kit.Kit, publishTime int64) (map[uint32]PublishInfo, error) {
+	result := make(map[uint32]PublishInfo)
+	keys, err := c.bds.Keys(kt.Ctx, keys.Key.PublishPattern())
+	if err != nil {
+		return nil, err
+	}
+	for _, key := range keys {
+		zValues, err := c.bds.ZRangeByScoreWithScores(kt.Ctx, key, &redis.ZRangeBy{
+			Min: "1",
+			Max: fmt.Sprintf("%d", publishTime),
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, v := range zValues {
+			fmt.Println(time.Unix(int64(v.Score), 0).Format(time.DateTime))
+			result[getStrategyIdUint32(v.Member)] = PublishInfo{
+				Key:         key,
+				PublishTime: int64(v.Score),
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // SetPublishTime set publish time
-func (c *client) SetPublishTime(kt *kit.Kit, bizID uint32, publishTime int64, strategyId uint32) (int64, error) {
+func (c *client) SetPublishTime(kt *kit.Kit, bizID, appID, strategyID uint32, publishTime int64) (int64, error) {
+	return c.bds.ZAdd(kt.Ctx, keys.Key.PublishString(bizID, appID), float64(publishTime), strategyID)
+}
 
-	scoresResults, err := c.bds.ZRangeWithScores(kt.Ctx, keys.Key.PublishTime(bizID), publishTime, publishTime+1)
-	if err != nil {
-		return 0, err
-	}
-
-	// 同一时间上线应该不超99999个
-	account := 0.00001
-	max := float64(publishTime)
-	for _, v := range scoresResults {
-		if v.Score > max {
-			max = v.Score
+func getStrategyIdUint32(v interface{}) uint32 {
+	if value, ok := v.(string); ok {
+		result, err := strconv.ParseUint(value, 10, 32)
+		if err != nil {
+			return 0
 		}
+		return uint32(result)
 	}
-	newScore := max + account
-	return c.bds.ZAdd(kt.Ctx, keys.Key.PublishTime(bizID), newScore, strategyId)
+	return 0
 }
