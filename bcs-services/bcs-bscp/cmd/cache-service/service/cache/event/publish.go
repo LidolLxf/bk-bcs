@@ -84,6 +84,7 @@ func (cm *Publish) Run() {
 }
 
 // 上线更新状态
+// nolint funlen
 func (cm *Publish) updateStrategy(kt *kit.Kit) {
 	publishInfos, err := cm.op.GetPublishTime(kt, time.Now().UTC().Unix())
 	if err != nil {
