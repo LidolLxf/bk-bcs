@@ -72,6 +72,7 @@ type Set interface {
 	Client() Client
 	ClientEvent() ClientEvent
 	ClientQuery() ClientQuery
+	ItsmConfig() ItsmConfig
 }
 
 // NewDaoSet create the DAO set instance.
@@ -500,6 +501,15 @@ func (s *set) ClientEvent() ClientEvent {
 // ClientQuery returns the ClientQuery scope's DAO
 func (s *set) ClientQuery() ClientQuery {
 	return &clientQueryDao{
+		idGen:    s.idGen,
+		auditDao: s.auditDao,
+		genQ:     s.genQ,
+	}
+}
+
+// ItsmConfig returns the ItsmConfig scope's DAO
+func (s *set) ItsmConfig() ItsmConfig {
+	return &itsmConfigDao{
 		idGen:    s.idGen,
 		auditDao: s.auditDao,
 		genQ:     s.genQ,

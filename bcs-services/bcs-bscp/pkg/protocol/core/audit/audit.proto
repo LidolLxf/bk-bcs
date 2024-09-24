@@ -26,6 +26,7 @@ message AuditSpec {
   string res_instance = 7;
   string operate_way = 8;
   string status = 9;
+  bool is_compare = 10;
 }
 
 // AuditAttachment defines the audit's attachment

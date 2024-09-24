@@ -53,6 +53,7 @@ func (s *Service) ListAudits(ctx context.Context, req *pbcs.ListAuditsReq) (
 		ResInstance:  req.ResInstance,
 		Status:       req.Status,
 		Operator:     req.Operator,
+		Id:           req.Id,
 	}
 	rp, err := s.client.DS.ListAudits(grpcKit.RpcCtx(), r)
 	if err != nil {

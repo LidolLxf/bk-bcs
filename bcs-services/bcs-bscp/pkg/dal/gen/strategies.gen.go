@@ -40,6 +40,10 @@ func newStrategy(db *gorm.DB, opts ...gen.DOOption) strategy {
 	_strategy.RejectReason = field.NewString(tableName, "reject_reason")
 	_strategy.Approver = field.NewString(tableName, "approver")
 	_strategy.ApproverProgress = field.NewString(tableName, "approver_progress")
+	_strategy.ItsmTicketType = field.NewString(tableName, "itsm_ticket_type")
+	_strategy.ItsmTicketUrl = field.NewString(tableName, "itsm_ticket_url")
+	_strategy.ItsmTicketSn = field.NewString(tableName, "itsm_ticket_sn")
+	_strategy.ItsmTicketStatus = field.NewString(tableName, "itsm_ticket_status")
 	_strategy.PubState = field.NewString(tableName, "pub_state")
 	_strategy.BizID = field.NewUint32(tableName, "biz_id")
 	_strategy.AppID = field.NewUint32(tableName, "app_id")
@@ -71,6 +75,10 @@ type strategy struct {
 	RejectReason     field.String
 	Approver         field.String
 	ApproverProgress field.String
+	ItsmTicketType   field.String
+	ItsmTicketUrl    field.String
+	ItsmTicketSn     field.String
+	ItsmTicketStatus field.String
 	PubState         field.String
 	BizID            field.Uint32
 	AppID            field.Uint32
@@ -108,6 +116,10 @@ func (s *strategy) updateTableName(table string) *strategy {
 	s.RejectReason = field.NewString(table, "reject_reason")
 	s.Approver = field.NewString(table, "approver")
 	s.ApproverProgress = field.NewString(table, "approver_progress")
+	s.ItsmTicketType = field.NewString(table, "itsm_ticket_type")
+	s.ItsmTicketUrl = field.NewString(table, "itsm_ticket_url")
+	s.ItsmTicketSn = field.NewString(table, "itsm_ticket_sn")
+	s.ItsmTicketStatus = field.NewString(table, "itsm_ticket_status")
 	s.PubState = field.NewString(table, "pub_state")
 	s.BizID = field.NewUint32(table, "biz_id")
 	s.AppID = field.NewUint32(table, "app_id")
@@ -140,7 +152,7 @@ func (s *strategy) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *strategy) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 21)
+	s.fieldMap = make(map[string]field.Expr, 25)
 	s.fieldMap["id"] = s.ID
 	s.fieldMap["name"] = s.Name
 	s.fieldMap["release_id"] = s.ReleaseID
@@ -154,6 +166,10 @@ func (s *strategy) fillFieldMap() {
 	s.fieldMap["reject_reason"] = s.RejectReason
 	s.fieldMap["approver"] = s.Approver
 	s.fieldMap["approver_progress"] = s.ApproverProgress
+	s.fieldMap["itsm_ticket_type"] = s.ItsmTicketType
+	s.fieldMap["itsm_ticket_url"] = s.ItsmTicketUrl
+	s.fieldMap["itsm_ticket_sn"] = s.ItsmTicketSn
+	s.fieldMap["itsm_ticket_status"] = s.ItsmTicketStatus
 	s.fieldMap["pub_state"] = s.PubState
 	s.fieldMap["biz_id"] = s.BizID
 	s.fieldMap["app_id"] = s.AppID

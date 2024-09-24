@@ -91,6 +91,7 @@ func (s *Service) SubmitPublishApprove(ctx context.Context, req *pbcs.SubmitPubl
 		GroupName:       req.GroupName,
 		PublishType:     req.PublishType,
 		PublishTime:     req.PublishTime,
+		IsCompare:       req.IsCompare,
 	}
 	rp, err := s.client.DS.SubmitPublishApprove(grpcKit.RpcCtx(), r)
 	if err != nil {
@@ -133,7 +134,7 @@ func (s *Service) Approve(ctx context.Context, req *pbcs.ApproveReq) (*pbcs.Appr
 	}
 
 	resp := &pbcs.ApproveResp{
-		Status: rp.Status,
+		HaveCredentials: rp.HaveCredentials,
 	}
 	return resp, nil
 }

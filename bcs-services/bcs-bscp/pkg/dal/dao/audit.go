@@ -179,6 +179,7 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 	// 后续改造中去掉audit.ResourceType.In，现在加上为了适配原来的数据
 	result := audit.WithContext(kit.Ctx).Select(audit.ID, audit.ResourceType, audit.ResourceID, audit.Action,
 		audit.BizID, audit.AppID, audit.Operator, audit.CreatedAt, audit.ResInstance, audit.OperateWay, audit.Status,
+		audit.IsCompare,
 		app.Name, app.Creator,
 		strategy.PublishType.As("publish_type"), strategy.PublishTime, strategy.PublishTime,
 		strategy.PublishStatus, strategy.RejectReason, strategy.Approver, strategy.ApproverProgress,
@@ -188,6 +189,10 @@ func (au *audit) createQuery(kit *kit.Kit, req *pbds.ListAuditsReq) (gen.IAuditD
 		Where(audit.BizID.Eq(req.BizId), audit.ResourceType.In(string(enumor.ResAppConfig), string(enumor.ResGroup),
 			string(enumor.ResHook), string(enumor.ResTemplate), string(enumor.ResVariable),
 			string(enumor.ResCredential), string(enumor.ResInstance)))
+
+	if req.Id != 0 {
+		result = result.Where(audit.ID.Eq(req.Id))
+	}
 
 	// if not query all app, need current app_id
 	if !req.All {

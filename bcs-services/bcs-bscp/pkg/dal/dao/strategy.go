@@ -13,6 +13,7 @@
 package dao
 
 import (
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/constant"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/gen"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
@@ -24,11 +25,16 @@ type Strategy interface {
 	GetLast(kit *kit.Kit, bizID, appID, releasedID uint32) (*table.Strategy, error)
 	// GetStrategyByIDs Get strategy by ids.
 	GetStrategyByIDs(kit *kit.Kit, strategyIDs []uint32) ([]*table.Strategy, error)
+	// ListStrategyByItsm list strategy by itsm.
+	ListStrategyByItsm(kit *kit.Kit) ([]*table.Strategy, error)
 	// UpdateByID update strategy kv by id.
 	UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error
 	// UpdateByIDs update strategy kv by ids
 	UpdateByIDs(
 		kit *kit.Kit, tx *gen.QueryTx, strategyID []uint32, m map[string]interface{}) error
+	// UpdateByIDsWithNonTx update strategy kv by ids
+	UpdateByIDsWithNonTx(
+		kit *kit.Kit, strategyID []uint32, m map[string]interface{}) error
 }
 
 var _ Strategy = new(strategyDao)
@@ -52,6 +58,12 @@ func (dao *strategyDao) GetStrategyByIDs(kit *kit.Kit, strategyIDs []uint32) ([]
 	return m.WithContext(kit.Ctx).Where(m.ID.In(strategyIDs...)).Find()
 }
 
+// GetStrategyByIDs Get strategy by ids.
+func (dao *strategyDao) ListStrategyByItsm(kit *kit.Kit) ([]*table.Strategy, error) {
+	m := dao.genQ.Strategy
+	return m.WithContext(kit.Ctx).Where(m.ItsmTicketStatus.Eq(constant.ItsmTicketStatusCreated)).Find()
+}
+
 // UpdateByID update strategy kv by id
 func (dao *strategyDao) UpdateByID(kit *kit.Kit, tx *gen.QueryTx, strategyID uint32, m map[string]interface{}) error {
 	s := tx.Strategy
@@ -66,6 +78,17 @@ func (dao *strategyDao) UpdateByIDs(
 		return nil
 	}
 	s := tx.Strategy
+	_, err := s.WithContext(kit.Ctx).Where(s.ID.In(strategyIDs...)).Updates(m)
+	return err
+}
+
+// UpdateByIDsWithNonTx update strategy kv by ids
+func (dao *strategyDao) UpdateByIDsWithNonTx(
+	kit *kit.Kit, strategyIDs []uint32, m map[string]interface{}) error {
+	if len(strategyIDs) == 0 {
+		return nil
+	}
+	s := dao.genQ.Strategy
 	_, err := s.WithContext(kit.Ctx).Where(s.ID.In(strategyIDs...)).Updates(m)
 	return err
 }

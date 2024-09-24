@@ -230,6 +230,10 @@ type StrategySpec struct {
 	RejectReason     string        `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
 	Approver         string        `db:"approver" json:"approver" approver:"column:approver"`
 	ApproverProgress string        `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
+	ItsmTicketType   string        `db:"itsm_ticket_type" json:"itsm_ticket_type" gorm:"column:itsm_ticket_type"`
+	ItsmTicketUrl    string        `db:"itsm_ticket_url" json:"itsm_ticket_url" gorm:"column:itsm_ticket_url"`
+	ItsmTicketSn     string        `db:"itsm_ticket_sn" json:"itsm_ticket_sn" gorm:"column:itsm_ticket_sn"`
+	ItsmTicketStatus string        `db:"itsm_ticket_status" json:"itsm_ticket_status" gorm:"column:itsm_ticket_status"`
 }
 
 // ValidateCreate validate strategy spec when it is created.

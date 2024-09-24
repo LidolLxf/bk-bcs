@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/cmd/cache-service/service/cache/client"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/components/itsm"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/bedis"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/dao"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
@@ -197,4 +198,49 @@ func (cm *Publish) updateStrategy(kt *kit.Kit) {
 			return
 		}
 	}
+}
+
+// SyncApproveItsmStatus task to sync approve status with itsm tickets
+func (cm *Publish) SyncApproveItsmStatus(kt *kit.Kit) {
+	strategys, err := cm.set.Strategy().ListStrategyByItsm(kt)
+	if err != nil {
+		logs.Errorf("list strate by itsm failed: %s", err.Error())
+	}
+	snList := []string{}
+	strategyMap := map[string]*table.Strategy{}
+	for _, strategy := range strategys {
+		snList = append(snList, strategy.Spec.ItsmTicketSn)
+		strategyMap[strategy.Spec.ItsmTicketSn] = strategy
+	}
+	tickets, err := itsm.ListTickets(snList)
+	if err != nil {
+		logs.Errorf("list approve itsm tickets %v failed, err: %s", snList, err.Error())
+		return
+	}
+
+	var strategyIDs []uint32
+	for _, ticket := range tickets {
+		if ticket.CurrentStatus == "FINISHED" ||
+			ticket.CurrentStatus == "TERMINATED" ||
+			ticket.CurrentStatus == "REVOKED" {
+			strategy, ok := strategyMap[ticket.SN]
+			if !ok {
+				logs.Errorf("approve ticket %s doesn't exits in db", ticket.SN)
+				return
+			}
+			strategyIDs = append(strategyIDs, strategy.ID)
+		}
+	}
+
+	err = cm.set.Strategy().UpdateByIDsWithNonTx(kt, strategyIDs, map[string]interface{}{
+		"itsm_ticket_sn":     "",
+		"itsm_ticket_status": "",
+		"itsm_ticket_type":   "",
+		"itsm_ticket_url":    "",
+	})
+	if err != nil {
+		logs.Errorf("update strategy failed, err: %s", err.Error())
+		return
+	}
+	logs.Infof("sync aprove itsm status for ticket success")
 }

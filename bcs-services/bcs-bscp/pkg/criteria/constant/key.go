@@ -151,3 +151,22 @@ const (
 	// LabelKeyAgentID is the key of agent id in bcs node labels.
 	LabelKeyAgentID = "bkcmdb.tencent.com/bk-agent-id"
 )
+
+const (
+	// CreateCountSignApproveItsmServiceID used to create an itsm ticket
+	// when creating a count sign approve in a shared cluster
+	CreateCountSignApproveItsmServiceID = "create_count_sign_approve__itsm_service_id"
+	// CreateOrSignApproveItsmServiceID used to create an itsm ticket
+	// when creating an or sign approve in a shared cluster
+	CreateOrSignApproveItsmServiceID = "create_or_sign_approve__itsm_service_id"
+
+	// ItsmTicketStatusCreated enum string for created status
+	ItsmTicketStatusCreated = "CREATED"
+
+	// ItsmTicketTypeCreate enum string for itsm ticket type create
+	ItsmTicketTypeCreate = "CREATE"
+	// ItsmTicketTypeUpdate enum string for itsm ticket type update
+	ItsmTicketTypeUpdate = "UPDATE"
+	// ItsmTicketTypeDelete enum string for itsm ticket type delete
+	ItsmTicketTypeDelete = "DELETE"
+)

@@ -13,7 +13,6 @@
 package table
 
 import (
-	"strings"
 	"time"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/enumor"
@@ -53,6 +52,7 @@ type Audit struct {
 	OperateWay   string                   `db:"operate_way" json:"operate_way" gorm:"column:operate_way"`
 	Status       enumor.AuditStatus       `db:"status" json:"status" gorm:"column:status"`
 	StrategyId   uint32                   `db:"strategy_id" json:"strategy_id" gorm:"column:strategy_id"`
+	IsCompare    bool                     `db:"is_compare" json:"is_compare" gorm:"column:is_compare"`
 }
 
 // TableName is the audit's database table name.
@@ -70,24 +70,9 @@ type AuditBasicDetail struct {
 type AuditField struct {
 	OperateWay       string
 	Action           enumor.AuditAction
-	ResourceInstance map[string]string
+	ResourceInstance string
 	Status           enumor.AuditStatus
 	AppId            uint32
 	StrategyId       uint32
-}
-
-// InstanceToString resource instance to string
-func InstanceToString(m map[string]string) string {
-	if len(m) == 0 {
-		return ""
-	}
-	var s strings.Builder
-	for key, value := range m {
-		s.WriteString(key + ":" + value + "\n")
-	}
-	resp := s.String()
-	if len(resp) > 1 {
-		return resp[:len(resp)-1]
-	}
-	return s.String()
+	IsCompare        bool
 }

@@ -91,6 +91,7 @@ type AuditPart struct {
 	ResInstance  string    `db:"res_instance" json:"res_instance" gorm:"column:res_instance"`
 	OperateWay   string    `db:"operate_way" json:"operate_way" gorm:"column:operate_way"`
 	Status       string    `db:"status" json:"status" gorm:"column:status"`
+	IsCompare    bool      `db:"is_compare" json:"is_compare" gorm:"column:is_compare"`
 }
 
 // StrategyPart defines strategy fields
