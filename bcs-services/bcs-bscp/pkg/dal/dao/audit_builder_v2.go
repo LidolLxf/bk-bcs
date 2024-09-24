@@ -42,6 +42,7 @@ type AuditPrepare interface {
 	PrepareUpdate(obj, oldObj AuditRes) AuditDo
 	PrepareDelete(obj AuditRes) AuditDo
 	PreparePublish(obj AuditRes) AuditDo
+	PrepareCreateByInstance(resId uint32, obj interface{}) AuditDo
 }
 
 // initAuditBuilderV2 create a new audit builder instance.
@@ -57,6 +58,50 @@ func initAuditBuilderV2(kit *kit.Kit, bizID uint32, ad *audit) AuditPrepare {
 		ad:    ad,
 		bizID: bizID,
 		kit:   kit,
+	}
+
+	if bizID <= 0 {
+		ab.hitErr = errors.New("invalid audit biz id")
+	}
+
+	if len(kit.User) == 0 {
+		ab.hitErr = errors.New("invalid audit operator")
+	}
+
+	return ab
+}
+
+// initAuditBuilderV3 create a new audit builder instance.
+func initAuditBuilderV3(kit *kit.Kit, bizID uint32, au *table.AuditField, ad *audit) AuditPrepare {
+	ab := &AuditBuilderV2{
+		toAudit: &table.Audit{
+			BizID:       bizID,
+			CreatedAt:   time.Now().UTC(),
+			Operator:    kit.User,
+			Rid:         kit.Rid,
+			AppCode:     kit.AppCode,
+			Action:      au.Action,
+			Status:      au.Status,
+			ResInstance: au.ResourceInstance,
+			OperateWay:  au.OperateWay,
+			StrategyId:  au.StrategyId,
+			IsCompare:   au.IsCompare,
+		},
+		ad:    ad,
+		bizID: bizID,
+		kit:   kit,
+	}
+
+	ab.toAudit.ResourceType = enumor.ActionMap[ab.toAudit.Action]
+
+	// default value
+	if ab.toAudit.OperateWay != string(enumor.WebUI) {
+		ab.toAudit.OperateWay = string(enumor.API)
+	}
+
+	// app id may not
+	if au.AppId != 0 {
+		ab.toAudit.AppID = au.AppId
 	}
 
 	if bizID <= 0 {
@@ -97,6 +142,26 @@ func (ab *AuditBuilderV2) PrepareCreate(obj AuditRes) AuditDo {
 	ab.toAudit.ResourceType = enumor.AuditResourceType(obj.ResType())
 	ab.toAudit.ResourceID = obj.ResID()
 	ab.toAudit.Action = enumor.Create
+	ab.prev = obj
+
+	detail := &table.AuditBasicDetail{
+		Prev:    ab.prev,
+		Changed: nil,
+	}
+
+	js, err := json.Marshal(detail)
+	if err != nil {
+		ab.hitErr = err
+		return ab
+	}
+	ab.toAudit.Detail = string(js)
+
+	return ab
+}
+
+// PrepareCreateByInstance 创建资源
+func (ab *AuditBuilderV2) PrepareCreateByInstance(resId uint32, obj interface{}) AuditDo {
+	ab.toAudit.ResourceID = resId
 	ab.prev = obj
 
 	detail := &table.AuditBasicDetail{
