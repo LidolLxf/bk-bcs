@@ -44,6 +44,7 @@ func newStrategy(db *gorm.DB, opts ...gen.DOOption) strategy {
 	_strategy.ItsmTicketUrl = field.NewString(tableName, "itsm_ticket_url")
 	_strategy.ItsmTicketSn = field.NewString(tableName, "itsm_ticket_sn")
 	_strategy.ItsmTicketStatus = field.NewString(tableName, "itsm_ticket_status")
+	_strategy.ItsmTicketStateID = field.NewInt(tableName, "itsm_ticket_state_id")
 	_strategy.PubState = field.NewString(tableName, "pub_state")
 	_strategy.BizID = field.NewUint32(tableName, "biz_id")
 	_strategy.AppID = field.NewUint32(tableName, "app_id")
@@ -61,32 +62,33 @@ func newStrategy(db *gorm.DB, opts ...gen.DOOption) strategy {
 type strategy struct {
 	strategyDo strategyDo
 
-	ALL              field.Asterisk
-	ID               field.Uint32
-	Name             field.String
-	ReleaseID        field.Uint32
-	AsDefault        field.Bool
-	Scope            field.Field
-	Namespace        field.String
-	Memo             field.String
-	PublishType      field.String
-	PublishTime      field.String
-	PublishStatus    field.String
-	RejectReason     field.String
-	Approver         field.String
-	ApproverProgress field.String
-	ItsmTicketType   field.String
-	ItsmTicketUrl    field.String
-	ItsmTicketSn     field.String
-	ItsmTicketStatus field.String
-	PubState         field.String
-	BizID            field.Uint32
-	AppID            field.Uint32
-	StrategySetID    field.Uint32
-	Creator          field.String
-	Reviser          field.String
-	CreatedAt        field.Time
-	UpdatedAt        field.Time
+	ALL               field.Asterisk
+	ID                field.Uint32
+	Name              field.String
+	ReleaseID         field.Uint32
+	AsDefault         field.Bool
+	Scope             field.Field
+	Namespace         field.String
+	Memo              field.String
+	PublishType       field.String
+	PublishTime       field.String
+	PublishStatus     field.String
+	RejectReason      field.String
+	Approver          field.String
+	ApproverProgress  field.String
+	ItsmTicketType    field.String
+	ItsmTicketUrl     field.String
+	ItsmTicketSn      field.String
+	ItsmTicketStatus  field.String
+	ItsmTicketStateID field.Int
+	PubState          field.String
+	BizID             field.Uint32
+	AppID             field.Uint32
+	StrategySetID     field.Uint32
+	Creator           field.String
+	Reviser           field.String
+	CreatedAt         field.Time
+	UpdatedAt         field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -120,6 +122,7 @@ func (s *strategy) updateTableName(table string) *strategy {
 	s.ItsmTicketUrl = field.NewString(table, "itsm_ticket_url")
 	s.ItsmTicketSn = field.NewString(table, "itsm_ticket_sn")
 	s.ItsmTicketStatus = field.NewString(table, "itsm_ticket_status")
+	s.ItsmTicketStateID = field.NewInt(table, "itsm_ticket_state_id")
 	s.PubState = field.NewString(table, "pub_state")
 	s.BizID = field.NewUint32(table, "biz_id")
 	s.AppID = field.NewUint32(table, "app_id")
@@ -152,7 +155,7 @@ func (s *strategy) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (s *strategy) fillFieldMap() {
-	s.fieldMap = make(map[string]field.Expr, 25)
+	s.fieldMap = make(map[string]field.Expr, 26)
 	s.fieldMap["id"] = s.ID
 	s.fieldMap["name"] = s.Name
 	s.fieldMap["release_id"] = s.ReleaseID
@@ -170,6 +173,7 @@ func (s *strategy) fillFieldMap() {
 	s.fieldMap["itsm_ticket_url"] = s.ItsmTicketUrl
 	s.fieldMap["itsm_ticket_sn"] = s.ItsmTicketSn
 	s.fieldMap["itsm_ticket_status"] = s.ItsmTicketStatus
+	s.fieldMap["itsm_ticket_state_id"] = s.ItsmTicketStateID
 	s.fieldMap["pub_state"] = s.PubState
 	s.fieldMap["biz_id"] = s.BizID
 	s.fieldMap["app_id"] = s.AppID

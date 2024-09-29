@@ -70,3 +70,11 @@ func (ps *PublishOption) Validate() error {
 
 	return nil
 }
+
+// TicketInfo defines fields to ticket info
+type TicketInfo struct {
+	Status   string
+	Operater string
+	Message  string
+	Over     bool
+}

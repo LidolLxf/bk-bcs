@@ -285,10 +285,11 @@ func (s *Service) SubmitPublishApprove(
 		}
 
 		err = s.dao.Strategy().UpdateByID(grpcKit, tx, pshID, map[string]interface{}{
-			"itsm_ticket_type":   constant.ItsmTicketTypeCreate,
-			"itsm_ticket_url":    ticketData.TicketURL,
-			"itsm_ticket_sn":     ticketData.SN,
-			"itsm_ticket_status": constant.ItsmTicketStatusCreated,
+			"itsm_ticket_type":     constant.ItsmTicketTypeCreate,
+			"itsm_ticket_url":      ticketData.TicketURL,
+			"itsm_ticket_sn":       ticketData.SN,
+			"itsm_ticket_status":   constant.ItsmTicketStatusCreated,
+			"itsm_ticket_state_id": ticketData.StateID,
 		})
 
 		if err != nil {
@@ -335,29 +336,48 @@ func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.Appr
 		return nil, err
 	}
 
-	// ticketInfoData, err := itsm.GetTicketInfo(strategy.Spec.ItsmTicketSn)
+	// // 获取ticket相关内容，如果状态不正常则更新表
+	// tikectInfo, err := s.checkAndUpdateTicketInfo(tx, strategy.Spec.ItsmTicketSn, req.PublishStatus)
 	// if err != nil {
 	// 	return nil, err
 	// }
 
-	// fmt.Println(ticketInfoData)
-
 	var updateContent map[string]interface{}
+	itsmUpdata := make(map[string]interface{})
 	switch req.PublishStatus {
 	case string(table.RevokedPublish):
 		updateContent, err = s.revokeApprove(grpcKit, req, strategy)
 		if err != nil {
 			return nil, err
 		}
+		itsmUpdata = map[string]interface{}{
+			"sn":             strategy.Spec.ItsmTicketSn,
+			"operator":       grpcKit.User,
+			"action_type":    "WITHDRAW",
+			"action_message": fmt.Sprintf("BSCP 代理用户 %s 撤回: %s", grpcKit.User, req.Reason),
+		}
 	case string(table.RejectedApproval):
 		updateContent, err = s.rejectApprove(grpcKit, req, strategy)
 		if err != nil {
 			return nil, err
 		}
+		itsmUpdata = map[string]interface{}{
+			"sn":       strategy.Spec.ItsmTicketSn,
+			"state id": strategy.Spec.ItsmTicketStateID,
+			"approver": grpcKit.User,
+			"action":   "false",
+			"remark":   req.Reason,
+		}
 	case string(table.PendPublish):
 		updateContent, err = s.passApprove(grpcKit, tx, req, strategy)
 		if err != nil {
 			return nil, err
+		}
+		itsmUpdata = map[string]interface{}{
+			"sn":       strategy.Spec.ItsmTicketSn,
+			"state id": strategy.Spec.ItsmTicketStateID,
+			"approver": grpcKit.User,
+			"action":   "true",
 		}
 	case string(table.AlreadyPublish):
 		updateContent, err = s.publishApprove(grpcKit, tx, req, strategy)
@@ -382,25 +402,18 @@ func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.Appr
 		return nil, err
 	}
 
-	// app, err := s.dao.App().GetByID(grpcKit, req.AppId)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if req.PublishStatus == string(table.RevokedPublish) {
+		err = itsm.WithdrawTicket(grpcKit.Ctx, itsmUpdata)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-	// _, _, stateId, err := s.getItsmInfoId(grpcKit, app.Spec.ApproveType)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// _, err = itsm.UpdateTicketByApporver(map[string]interface{}{
-	// 	"sn":          strategy.Spec.ItsmTicketSn,
-	// 	"state id":    stateId,
-	// 	"operator":    grpcKit.User,
-	// 	"action_type": "TRANSITION",
-	// 	"fields":      []string{"title", "BIZ", "APP", "VERSION_NAME", "SCOPE", "COMPARE"},
-	// })
-	// if err != nil {
-	// 	return nil, err
+	// if req.PublishStatus == string(table.RejectedApproval) || req.PublishStatus == string(table.PendPublish) {
+	// 	_, err = itsm.UpdateTicketByApporver(grpcKit.Ctx, itsmUpdata)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 	// }
 
 	if err = tx.Commit(); err != nil {
@@ -418,6 +431,69 @@ func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.Appr
 		HaveCredentials: haveCredentials,
 	}, nil
 }
+
+// 获取ticket相关内容，如果状态不正常则更新表,后面再处理
+// func (s *Service) checkAndUpdateTicketInfo(tx *gen.QueryTx, sn, publishStatus string) (types.TicketInfo, error) {
+// 	var ticketInfo types.TicketInfo
+// 	// 查询单据是否正常
+// 	ticketsItem, err := itsm.ListTickets([]string{sn})
+// 	if err != nil {
+// 		return ticketInfo, err
+// 	}
+
+// 	updateContent := make(map[string]interface{})
+// 	var errReturn error
+// 	for _, ticket := range ticketsItem {
+// 		updateContent["reviser"] = ticket.UpdatedBy
+// 		// 单据已经被撤销
+// 		if ticket.CurrentStatus == constant.TicketRevokedStatu {
+// 			updateContent["publish_status"] = table.RevokedPublish
+// 			errReturn = errors.New("this approve has been revoked by itsm")
+// 		}
+
+// 		// 单据已经被驳回或者关闭
+// 		if ticket.CurrentStatus == constant.TicketTerminatedStatu {
+// 			updateContent["publish_status"] = table.RejectedApproval
+// 			errReturn = errors.New("this approve has been revoked by itsm")
+// 		}
+
+// 		// 挂起不是正常单据直接报错
+// 		if ticket.CurrentStatus == constant.TicketSuspendedStatu {
+// 			return ticketInfo, errors.New("this approve has been suspended by itsm")
+// 		}
+// 		// if ticket.CurrentStatus == "RUNNING" ||
+// 		// 	ticket.CurrentStatus == "TERMINATED" ||
+// 		// 	ticket.CurrentStatus == "REVOKED" {
+// 		// 	return errors.New("this approve is finished, ")
+// 		// }
+// 		// // 其他情况
+// 		ticketInfo.Status = ticket.CurrentStatus
+// 		ticketInfo.Operater = ticket.UpdateAt
+// 	}
+
+// 	err = s.dao.Strategy().UpdateByID(grpcKit, tx, strategy.ID, updateContent)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// update audit details
+// 	err = s.dao.AuditDao().UpdateByStrategyID(grpcKit, tx, strategy.ID, map[string]interface{}{
+// 		"status": updateContent["publish_status"],
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	// // 非running状态直接return报错
+// 	// if tikectInfo.Status != constant.TicketRunningStatu {
+// 	// 	return nil, fmt.Errorf("invalid approve data, ticket statu: %s", tikectInfo.Status)
+// 	// }
+
+// 	// 已处理【负责人审批】(拒绝)
+// 	// 已处理【负责人审批】(通过)
+// 	// 关闭了单据：测试.
+// 	return ticketInfo, nil
+// }
 
 // GenerateReleaseAndPublish generate release and publish.
 // nolint: funlen
@@ -579,6 +655,10 @@ func (s *Service) rejectApprove(
 		return nil, fmt.Errorf("rejected not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
 	}
 
+	if req.Reason == "" {
+		return nil, errors.New("reason can not empty")
+	}
+
 	// 判断是否在审批人队列
 	isApprover := false
 	users := strings.Split(strategy.Spec.ApproverProgress, ",")
@@ -608,16 +688,18 @@ func (s *Service) passApprove(
 		return nil, fmt.Errorf("pass not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
 	}
 
-	// 存在app更改成不审批的情况，要根据审批人进度来确定是会签还是或签
+	// 存在app更改成不审批的情况，要根据审批人来确定是会签还是或签
 	// 判断是否在审批人队列
 	isApprover := false
-	approverUsers := strings.Split(strategy.Spec.Approver, ",")
 	approverProgress := strategy.Spec.ApproverProgress
 	progressUsers := strings.Split(approverProgress, ",")
+	var newProgressUsers []string
 	for _, v := range progressUsers {
 		if v == kit.User {
 			isApprover = true
+			continue
 		}
+		newProgressUsers = append(newProgressUsers, v)
 	}
 
 	// 不是审批人的情况返回无权限审批
@@ -627,20 +709,15 @@ func (s *Service) passApprove(
 
 	publishStatus := table.PendApproval
 	// 或签通过
-	if len(approverUsers) == len(progressUsers) {
+	if strings.Contains(strategy.Spec.Approver, "|") || strategy.Spec.Approver == kit.User {
 		publishStatus = table.PendPublish
 	} else {
-		for id, v := range approverUsers {
-			// 最后一个的情况下，直接待上线
-			if v == kit.User && id == len(approverUsers)-1 {
-				publishStatus = table.PendPublish
-			} else if v == kit.User {
-				// 下一个审批人
-				approverProgress = approverUsers[id+1]
-				break
-			}
+		// 最后一个的情况下，直接待上线
+		if len(newProgressUsers) == 0 {
+			publishStatus = table.PendPublish
+		} else {
+			approverProgress = strings.Join(newProgressUsers, ",")
 		}
-
 	}
 
 	// 自动上线则直接上线
@@ -766,11 +843,13 @@ func (s *Service) parsePublishOption(req *pbds.SubmitPublishApproveReq, app *tab
 		opt.Approver = app.Spec.Approver
 		opt.ApproverProgress = app.Spec.Approver
 		opt.PubState = string(table.Unpublished)
-		if app.Spec.ApproveType == table.CountSign {
-			// approver cannot be blank when countersigning
-			approvers := strings.Split(app.Spec.Approver, ",")
-			opt.ApproverProgress = approvers[0]
-		}
+	}
+
+	// 后续app改审批方式的时候可以判断是或签还是会签
+	if app.Spec.ApproveType == table.OrSign {
+		opt.Approver = app.Spec.Approver
+		approver := strings.Split(app.Spec.Approver, ",")
+		opt.Approver = strings.Join(approver, "|")
 	}
 
 	// publish immediately
@@ -1056,7 +1135,7 @@ func (s *Service) submitCreateApproveTicket(
 				stateApproveId: app.Spec.Approver,
 			}},
 	}
-	return itsm.CreateTicket(reqData)
+	return itsm.CreateTicket(kt.Ctx, reqData)
 }
 
 // 定时上线

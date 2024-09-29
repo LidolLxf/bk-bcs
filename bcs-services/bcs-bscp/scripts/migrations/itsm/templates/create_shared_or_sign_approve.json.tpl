@@ -1,13 +1,13 @@
 {
 	"is_deleted": false,
-	"name": "\u521b\u5efa\u5171\u4eab\u96c6\u7fa4\u547d\u540d\u7a7a\u95f4-20240308112119-20240914173410-20240914175319",
+	"name": "\u521b\u5efa\u5171\u4eab\u96c6\u7fa4\u547d\u540d\u7a7a\u95f4-20240308112119-20240914173410-20240914175319-20240920152131",
 	"desc": "",
 	"flow_type": "other",
 	"is_enabled": true,
 	"is_revocable": true,
 	"revoke_config": {
-		"state": 0,
-		"type": 1
+		"type": 1,
+		"state": 0
 	},
 	"is_draft": false,
 	"is_builtin": false,
@@ -22,7 +22,7 @@
 	"supervise_type": "EMPTY",
 	"supervisor": "",
 	"engine_version": "PIPELINE_V1",
-	"version_number": "20240920152131",
+	"version_number": "20240929142158",
 	"table": {
 		"id": 36,
 		"is_deleted": false,
@@ -213,13 +213,13 @@
 	"task_schemas": [],
 	"creator": "",
 	"updated_by": "",
-	"workflow_id": 64,
+	"workflow_id": 78,
 	"version_message": "",
 	"states": {
-		"356": {
-			"workflow": 64,
-			"id": 356,
-			"key": 356,
+		"440": {
+			"workflow": 78,
+			"id": 440,
+			"key": 440,
 			"name": "\u5f00\u59cb",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -251,16 +251,16 @@
 			"is_multi": false,
 			"is_allow_skip": false,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null,
 			"is_first_state": false
 		},
-		"357": {
-			"workflow": 64,
-			"id": 357,
-			"key": 357,
+		"441": {
+			"workflow": 78,
+			"id": 441,
+			"key": 441,
 			"name": "\u63d0\u5355",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -314,12 +314,12 @@
 			"is_draft": false,
 			"is_terminable": false,
 			"fields": [
-				607,
-				612,
-				611,
-				613,
-				614,
-				615
+				733,
+				738,
+				737,
+				739,
+				740,
+				741
 			],
 			"type": "NORMAL",
 			"api_instance_id": 0,
@@ -328,16 +328,16 @@
 			"is_multi": false,
 			"is_allow_skip": false,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": "admin",
-			"update_at": "2024-09-20 15:03:16",
+			"update_at": "2024-09-29 14:14:50",
 			"end_at": null,
 			"is_first_state": true
 		},
-		"358": {
-			"workflow": 64,
-			"id": 358,
-			"key": 358,
+		"442": {
+			"workflow": 78,
+			"id": 442,
+			"key": 442,
 			"name": "\u7ed3\u675f",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -369,16 +369,16 @@
 			"is_multi": false,
 			"is_allow_skip": false,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null,
 			"is_first_state": false
 		},
-		"359": {
-			"workflow": 64,
-			"id": 359,
-			"key": 359,
+		"443": {
+			"workflow": 78,
+			"id": 443,
+			"key": 443,
 			"name": "\u8d1f\u8d23\u4eba\u5ba1\u6279",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -491,9 +491,9 @@
 			"is_draft": false,
 			"is_terminable": false,
 			"fields": [
-				608,
-				609,
-				610
+				734,
+				735,
+				736
 			],
 			"type": "APPROVAL",
 			"api_instance_id": 0,
@@ -505,16 +505,16 @@
 			"is_multi": false,
 			"is_allow_skip": true,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
-			"updated_by": "admin",
-			"update_at": "2024-09-14 18:12:03",
+			"create_at": "2024-09-27 17:42:56",
+			"updated_by": null,
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null,
 			"is_first_state": false
 		},
-		"360": {
-			"workflow": 64,
-			"id": 360,
-			"key": 360,
+		"444": {
+			"workflow": 78,
+			"id": 444,
+			"key": 444,
 			"name": "\u6210\u529f\u56de\u8c03",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -568,16 +568,16 @@
 			"is_multi": false,
 			"is_allow_skip": false,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null,
 			"is_first_state": false
 		},
-		"361": {
-			"workflow": 64,
-			"id": 361,
-			"key": 361,
+		"445": {
+			"workflow": 78,
+			"id": 445,
+			"key": 445,
 			"name": "\u5931\u8d25\u56de\u8c03",
 			"desc": "",
 			"distribute_type": "PROCESS",
@@ -631,23 +631,23 @@
 			"is_multi": false,
 			"is_allow_skip": false,
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null,
 			"is_first_state": false
 		}
 	},
 	"transitions": {
-		"349": {
-			"workflow": 64,
-			"id": 349,
-			"from_state": 356,
-			"to_state": 357,
+		"433": {
+			"workflow": 78,
+			"id": 433,
+			"from_state": 440,
+			"to_state": 441,
 			"name": "",
 			"axis": {
-				"end": "Left",
-				"start": "Right"
+				"start": "Right",
+				"end": "Left"
 			},
 			"condition": {
 				"expressions": [{
@@ -662,20 +662,20 @@
 			},
 			"condition_type": "default",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null
 		},
-		"350": {
-			"workflow": 64,
-			"id": 350,
-			"from_state": 359,
-			"to_state": 360,
+		"434": {
+			"workflow": 78,
+			"id": 434,
+			"from_state": 443,
+			"to_state": 444,
 			"name": "\u5ba1\u6279\u901a\u8fc7",
 			"axis": {
-				"end": "Left",
-				"start": "Right"
+				"start": "Right",
+				"end": "Left"
 			},
 			"condition": {
 				"expressions": [{
@@ -707,65 +707,77 @@
 			},
 			"condition_type": "by_field",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null
 		},
-		"351": {
-			"workflow": 64,
-			"id": 351,
-			"from_state": 359,
-			"to_state": 361,
+		"435": {
+			"workflow": 78,
+			"id": 435,
+			"from_state": 443,
+			"to_state": 445,
 			"name": "\u5ba1\u6279\u9a73\u56de",
 			"axis": {
-				"end": "Left",
-				"start": "Right"
+				"start": "Right",
+				"end": "Left"
 			},
 			"condition": {
 				"expressions": [{
 					"checkInfo": false,
 					"expressions": [{
-						"choiceList": [],
-						"condition": "==",
-						"key": "Fd6380d03621747689b9776224da468d",
-						"meta": {
-							"choice": [{
-									"key": "false",
-									"name": "\u62d2\u7edd"
-								},
-								{
-									"key": "true",
-									"name": "\u901a\u8fc7"
-								}
-							],
-							"code": "NODE_APPROVE_RESULT",
-							"type": "SELECT"
+							"choiceList": [],
+							"condition": "==",
+							"key": "Fd6380d03621747689b9776224da468d",
+							"source": "field",
+							"type": "SELECT",
+							"value": "false",
+							"meta": {
+								"choice": [{
+										"key": "false",
+										"name": "\u62d2\u7edd"
+									},
+									{
+										"key": "true",
+										"name": "\u901a\u8fc7"
+									}
+								],
+								"code": "NODE_APPROVE_RESULT",
+								"type": "SELECT"
+							}
 						},
-						"source": "field",
-						"type": "SELECT",
-						"value": "false"
-					}],
-					"type": "and"
+						{
+							"choiceList": [],
+							"condition": ">=",
+							"key": "l76a275fc8b01ceeb9a33f77ddb03679",
+							"source": "field",
+							"type": "INT",
+							"value": 1,
+							"meta": {
+								"code": "REJECT_COUNT"
+							}
+						}
+					],
+					"type": "or"
 				}],
-				"type": "and"
+				"type": "or"
 			},
 			"condition_type": "by_field",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
-			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
+			"updated_by": "admin",
+			"update_at": "2024-09-29 14:14:57",
 			"end_at": null
 		},
-		"352": {
-			"workflow": 64,
-			"id": 352,
-			"from_state": 360,
-			"to_state": 358,
+		"436": {
+			"workflow": 78,
+			"id": 436,
+			"from_state": 444,
+			"to_state": 442,
 			"name": "\u6d41\u7a0b\u7ed3\u675f",
 			"axis": {
-				"end": "Top",
-				"start": "Right"
+				"start": "Right",
+				"end": "Top"
 			},
 			"condition": {
 				"expressions": [{
@@ -780,20 +792,20 @@
 			},
 			"condition_type": "default",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null
 		},
-		"353": {
-			"workflow": 64,
-			"id": 353,
-			"from_state": 361,
-			"to_state": 358,
+		"437": {
+			"workflow": 78,
+			"id": 437,
+			"from_state": 445,
+			"to_state": 442,
 			"name": "\u6d41\u7a0b\u7ed3\u675f",
 			"axis": {
-				"end": "Bottom",
-				"start": "Right"
+				"start": "Right",
+				"end": "Bottom"
 			},
 			"condition": {
 				"expressions": [{
@@ -808,20 +820,20 @@
 			},
 			"condition_type": "default",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null
 		},
-		"354": {
-			"workflow": 64,
-			"id": 354,
-			"from_state": 357,
-			"to_state": 359,
+		"438": {
+			"workflow": 78,
+			"id": 438,
+			"from_state": 441,
+			"to_state": 443,
 			"name": "\u9ed8\u8ba4",
 			"axis": {
-				"end": "Left",
-				"start": "Right"
+				"start": "Right",
+				"end": "Left"
 			},
 			"condition": {
 				"expressions": [{
@@ -836,9 +848,9 @@
 			},
 			"condition_type": "default",
 			"creator": null,
-			"create_at": "2024-09-14 18:06:10",
+			"create_at": "2024-09-27 17:42:56",
 			"updated_by": null,
-			"update_at": "2024-09-14 18:06:10",
+			"update_at": "2024-09-27 17:42:56",
 			"end_at": null
 		}
 	},
@@ -848,7 +860,7 @@
 			"condition": "",
 			"by_condition": false,
 			"action_schemas": [{
-				"id": 124,
+				"id": 156,
 				"creator": "",
 				"updated_by": "",
 				"is_deleted": false,
@@ -885,7 +897,7 @@
 				"inputs": {}
 			}]
 		}],
-		"id": 124,
+		"id": 156,
 		"creator": "",
 		"updated_by": "",
 		"is_deleted": false,
@@ -895,7 +907,7 @@
 		"sender": "3002",
 		"inputs": [],
 		"source_type": "workflow",
-		"source_id": 64,
+		"source_id": 78,
 		"source_table_id": 0,
 		"is_draft": false,
 		"is_enabled": true,
@@ -903,8 +915,8 @@
 		"project_key": "alkaid-test"
 	}],
 	"fields": {
-		"607": {
-			"id": 607,
+		"733": {
+			"id": 733,
 			"is_deleted": false,
 			"is_builtin": true,
 			"is_readonly": false,
@@ -931,12 +943,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
+			"workflow_id": 78,
 			"state_id": "",
 			"source": "TABLE"
 		},
-		"608": {
-			"id": 608,
+		"734": {
+			"id": 734,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -973,12 +985,12 @@
 			"meta": {
 				"code": "APPROVE_RESULT"
 			},
-			"workflow_id": 64,
-			"state_id": 359,
+			"workflow_id": 78,
+			"state_id": 443,
 			"source": "CUSTOM"
 		},
-		"609": {
-			"id": 609,
+		"735": {
+			"id": 735,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1013,12 +1025,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 359,
+			"workflow_id": 78,
+			"state_id": 443,
 			"source": "CUSTOM"
 		},
-		"610": {
-			"id": 610,
+		"736": {
+			"id": 736,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1053,12 +1065,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 359,
+			"workflow_id": 78,
+			"state_id": 443,
 			"source": "CUSTOM"
 		},
-		"611": {
-			"id": 611,
+		"737": {
+			"id": 737,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1096,12 +1108,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 357,
+			"workflow_id": 78,
+			"state_id": 441,
 			"source": "CUSTOM"
 		},
-		"612": {
-			"id": 612,
+		"738": {
+			"id": 738,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1139,12 +1151,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 357,
+			"workflow_id": 78,
+			"state_id": 441,
 			"source": "CUSTOM"
 		},
-		"613": {
-			"id": 613,
+		"739": {
+			"id": 739,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1182,12 +1194,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 357,
+			"workflow_id": 78,
+			"state_id": 441,
 			"source": "CUSTOM"
 		},
-		"614": {
-			"id": 614,
+		"740": {
+			"id": 740,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1225,12 +1237,12 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 357,
+			"workflow_id": 78,
+			"state_id": 441,
 			"source": "CUSTOM"
 		},
-		"615": {
-			"id": 615,
+		"741": {
+			"id": 741,
 			"is_deleted": false,
 			"is_builtin": false,
 			"is_readonly": false,
@@ -1268,8 +1280,8 @@
 			"choice": [],
 			"related_fields": {},
 			"meta": {},
-			"workflow_id": 64,
-			"state_id": 357,
+			"workflow_id": 78,
+			"state_id": 441,
 			"source": "CUSTOM"
 		}
 	},

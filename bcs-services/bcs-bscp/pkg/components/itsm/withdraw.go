@@ -13,51 +13,51 @@
 // Package itsm xxx
 package itsm
 
-// var (
-// 	operateTicketPath = "/itsm/operate_ticket/"
-// )
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
 
-// // OperateTicketResp itsm operate ticket resp
-// type OperateTicketResp struct {
-// 	component.CommonResp
-// 	Data interface{} `json:"data"`
-// }
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/cc"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/logs"
+)
 
-// // WithdrawTicket withdraw itsm ticket
-// func WithdrawTicket(username, sn string) error {
-// 	itsmConf := config.GlobalConf.ITSM
-// 	// 默认使用网关访问，如果为外部版，则使用ESB访问
-// 	host := itsmConf.GatewayHost
-// 	if itsmConf.External {
-// 		host = itsmConf.Host
-// 	}
-// 	reqURL := fmt.Sprintf("%s%s", host, operateTicketPath)
-// 	req := gorequest.SuperAgent{
-// 		Url:    reqURL,
-// 		Method: "POST",
-// 		Data: map[string]interface{}{
-// 			"sn":             sn,
-// 			"operator":       username,
-// 			"action_type":    "WITHDRAW",
-// 			"action_message": fmt.Sprintf("BCS 代理用户 %s 撤回", username),
-// 		},
-// 	}
-// 	// 请求API
-// 	proxy := ""
-// 	body, err := component.Request(req, timeout, proxy, component.GetAuthHeader())
-// 	if err != nil {
-// 		logging.Error("request itsm withdraw ticket %s failed, %s", sn, err.Error())
-// 		return errorx.NewRequestITSMErr(err.Error())
-// 	}
-// 	// 解析返回的body
-// 	resp := &OperateTicketResp{}
-// 	if err := json.Unmarshal([]byte(body), resp); err != nil {
-// 		logging.Error("parse itsm body error, body: %v", body)
-// 		return err
-// 	}
-// 	if resp.Code != 0 {
-// 		logging.Error("itsm withdraw ticket %s failed, msg: %s", sn, resp.Message)
-// 		return errors.New(resp.Message)
-// 	}
-// 	return nil
-// }
+var (
+	operateTicketPath = "/itsm/operate_ticket/"
+)
+
+// OperateTicketResp itsm operate ticket resp
+type OperateTicketResp struct {
+	CommonResp
+	Data interface{} `json:"data"`
+}
+
+// WithdrawTicket withdraw itsm ticket
+func WithdrawTicket(ctx context.Context, reqData map[string]interface{}) error {
+	itsmConf := cc.DataService().ITSM
+	// 默认使用网关访问，如果为外部版，则使用ESB访问
+	host := itsmConf.GatewayHost
+	if itsmConf.External {
+		host = itsmConf.Host
+	}
+	reqURL := fmt.Sprintf("%s%s", host, operateTicketPath)
+	// 请求API
+	body, err := ItsmRequest(ctx, http.MethodPost, reqURL, reqData)
+	if err != nil {
+		logs.Errorf("request itsm withdraw ticket %s failed, %s", reqData["sn"], err.Error())
+		return fmt.Errorf("request itsm withdraw ticket %s failed, %s", reqData["sn"], err.Error())
+	}
+	// 解析返回的body
+	resp := &OperateTicketResp{}
+	if err := json.Unmarshal([]byte(body), resp); err != nil {
+		logs.Errorf("parse itsm body error, body: %v", body)
+		return err
+	}
+	if resp.Code != 0 {
+		logs.Errorf("itsm withdraw ticket %s failed, msg: %s", reqData["sn"], resp.Message)
+		return errors.New(resp.Message)
+	}
+	return nil
+}

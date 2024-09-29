@@ -25,9 +25,10 @@ import (
 )
 
 var (
-	getTicketInfoPath = "/itsm/ticket_approval_result/"
-	listTicketsPath   = "/itsm/get_tickets/"
-	limit             = 100
+	getTicketLogsPath        = "/itsm/get_ticket_logs/"
+	listTicketsPath          = "/itsm/get_tickets/"
+	ticketApprovalResultPath = "/itsm/ticket_approval_result/"
+	limit                    = 100
 )
 
 // ListTicketsResp itsm list tickets resp
@@ -108,40 +109,37 @@ func ListTickets(snList []string) ([]TicketsItem, error) {
 	return tickets, nil
 }
 
-// GetTicketInfoData get ticket data
-type GetTicketInfoData struct {
+// GetTicketLogsData get ticket logs
+type GetTicketLogsData struct {
 	CommonResp
-	Data GetTicketInfoDetail `json:"data"`
+	Data GetTicketLogsDetail `json:"data"`
 }
 
-// GetTicketInfoDetail ITSM get ticket detail item
-type GetTicketInfoDetail struct {
-	CurrentStatus string         `json:"current_status"`
-	CurrentSteps  []CurrentSteps `json:"current_steps"`
+// GetTicketLogsDetail ITSM get ticket logs detail
+type GetTicketLogsDetail struct {
+	Logs []Logs `json:"logs"`
 }
 
-// CurrentSteps 单据当前步骤
-type CurrentSteps struct {
-	ActionType     string `json:"action_type"`
-	Name           string `json:"name"`
-	ProcessorsType string `json:"processors_type"`
-	Processors     string `json:"processors"`
-	StateId        int    `json:"state_id"`
-	Status         string `json:"status"`
+// Logs 单据logs
+type Logs struct {
+	Operator  string `json:"operator"`
+	Message   string `json:"message"`
+	Source    string `json:"source"`
+	OperateAt string `json:"operate_at"`
 }
 
-// GetTicketInfo get itsm ticket info by sn
-func GetTicketInfo(sn string) (GetTicketInfoData, error) {
+// GetTicketApporverProgress get itsm ticket approver progress by sn
+func GetTicketApporverProgress(sn string) (GetTicketLogsData, error) {
 	itsmConf := cc.DataService().ITSM
 	// 默认使用网关访问，如果为外部版，则使用ESB访问
 	host := itsmConf.GatewayHost
 	if itsmConf.External {
 		host = itsmConf.Host
 	}
-	reqURL := fmt.Sprintf("%s%s?sn=%s&sn=%s", host, getTicketInfoPath, sn, "REQ20240924000009")
+	reqURL := fmt.Sprintf("%s%s?sn=%s", host, getTicketLogsPath, sn)
 
 	// 解析返回的body
-	resp := GetTicketInfoData{}
+	resp := GetTicketLogsData{}
 	body, err := ItsmRequest(context.Background(), http.MethodGet, reqURL, nil)
 	if err != nil {
 		logs.Errorf("request get itsm ticket %v failed, %s", sn, err.Error())
@@ -151,6 +149,44 @@ func GetTicketInfo(sn string) (GetTicketInfoData, error) {
 	if err := json.Unmarshal(body, &resp); err != nil {
 		logs.Errorf("parse itsm body error, body: %v", body)
 		return resp, err
+	}
+	// 没有单据的时候返回正常，内容为空
+	if resp.Message == "没有找到对应的单据" {
+		return resp, nil
+	}
+	if resp.Code != 0 {
+		logs.Errorf("get itsm ticket %v failed, msg: %s", sn, resp.Message)
+		return resp, errors.New(resp.Message)
+	}
+
+	return resp, nil
+}
+
+// TicketApporvalResult get itsm ticket approver progress by sn
+func TicketApporvalResult(sn string) (GetTicketLogsData, error) {
+	itsmConf := cc.DataService().ITSM
+	// 默认使用网关访问，如果为外部版，则使用ESB访问
+	host := itsmConf.GatewayHost
+	if itsmConf.External {
+		host = itsmConf.Host
+	}
+	reqURL := fmt.Sprintf("%s%s", host, ticketApprovalResultPath)
+
+	// 解析返回的body
+	resp := GetTicketLogsData{}
+	body, err := ItsmRequest(context.Background(), http.MethodPost, reqURL, []string{sn})
+	if err != nil {
+		logs.Errorf("request get itsm ticket %v failed, %s", sn, err.Error())
+		return resp, fmt.Errorf("request get itsm ticket %v failed, %s", sn, err.Error())
+	}
+
+	if err := json.Unmarshal(body, &resp); err != nil {
+		logs.Errorf("parse itsm body error, body: %v", body)
+		return resp, err
+	}
+	// 没有单据的时候返回正常，内容为空
+	if resp.Message == "没有找到对应的单据" {
+		return resp, nil
 	}
 	if resp.Code != 0 {
 		logs.Errorf("get itsm ticket %v failed, msg: %s", sn, resp.Message)

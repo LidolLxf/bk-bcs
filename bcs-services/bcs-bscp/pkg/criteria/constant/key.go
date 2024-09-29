@@ -152,6 +152,7 @@ const (
 	LabelKeyAgentID = "bkcmdb.tencent.com/bk-agent-id"
 )
 
+// itsm相关
 const (
 	// CreateCountSignApproveItsmServiceID used to create an itsm ticket
 	// when creating a count sign approve in a shared cluster
@@ -169,4 +170,20 @@ const (
 	ItsmTicketTypeUpdate = "UPDATE"
 	// ItsmTicketTypeDelete enum string for itsm ticket type delete
 	ItsmTicketTypeDelete = "DELETE"
+
+	// ItsmApproveNodeName 负责人审批workflow 节点名称
+	ItsmApproveNodeName = "负责人审批"
+
+	// 单据状态:
+
+	// TicketRunningStatu 处理中
+	TicketRunningStatu = "RUNNING"
+	// TicketFinishedStatu 已结束
+	TicketFinishedStatu = "FINISHED"
+	// TicketTerminatedStatu 被终止
+	TicketTerminatedStatu = "TERMINATED"
+	// TicketSuspendedStatu 被挂起
+	TicketSuspendedStatu = "SUSPENDED"
+	// TicketRevokedStatu 被撤销
+	TicketRevokedStatu = "REVOKED"
 )

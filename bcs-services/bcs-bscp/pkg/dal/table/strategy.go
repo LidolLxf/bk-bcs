@@ -223,18 +223,19 @@ type StrategySpec struct {
 	// 3. if this strategy is set to default strategy and works at namespace mode,
 	//    then its namespace should be the reserved namespace DefaultNamespace(
 	//    'bscp_default_ns')
-	Namespace        string        `db:"namespace" json:"namespace" gorm:"column:namespace"`
-	Memo             string        `db:"memo" json:"memo" gorm:"column:memo"`
-	PublishType      PublishType   `db:"publish_type" json:"publish_type" gorm:"column:publish_type"`
-	PublishTime      string        `db:"publish_time" json:"publish_time" gorm:"column:publish_time"`
-	PublishStatus    PublishStatus `db:"publish_status" json:"publish_status" gorm:"column:publish_status"`
-	RejectReason     string        `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
-	Approver         string        `db:"approver" json:"approver" approver:"column:approver"`
-	ApproverProgress string        `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
-	ItsmTicketType   string        `db:"itsm_ticket_type" json:"itsm_ticket_type" gorm:"column:itsm_ticket_type"`
-	ItsmTicketUrl    string        `db:"itsm_ticket_url" json:"itsm_ticket_url" gorm:"column:itsm_ticket_url"`
-	ItsmTicketSn     string        `db:"itsm_ticket_sn" json:"itsm_ticket_sn" gorm:"column:itsm_ticket_sn"`
-	ItsmTicketStatus string        `db:"itsm_ticket_status" json:"itsm_ticket_status" gorm:"column:itsm_ticket_status"`
+	Namespace         string        `db:"namespace" json:"namespace" gorm:"column:namespace"`
+	Memo              string        `db:"memo" json:"memo" gorm:"column:memo"`
+	PublishType       PublishType   `db:"publish_type" json:"publish_type" gorm:"column:publish_type"`
+	PublishTime       string        `db:"publish_time" json:"publish_time" gorm:"column:publish_time"`
+	PublishStatus     PublishStatus `db:"publish_status" json:"publish_status" gorm:"column:publish_status"`
+	RejectReason      string        `db:"reject_reason" json:"reject_reason" gorm:"column:reject_reason"`
+	Approver          string        `db:"approver" json:"approver" approver:"column:approver"`
+	ApproverProgress  string        `db:"approver_progress" json:"approver_progress" gorm:"column:approver_progress"`
+	ItsmTicketType    string        `db:"itsm_ticket_type" json:"itsm_ticket_type" gorm:"column:itsm_ticket_type"`
+	ItsmTicketUrl     string        `db:"itsm_ticket_url" json:"itsm_ticket_url" gorm:"column:itsm_ticket_url"`
+	ItsmTicketSn      string        `db:"itsm_ticket_sn" json:"itsm_ticket_sn" gorm:"column:itsm_ticket_sn"`
+	ItsmTicketStatus  string        `db:"itsm_ticket_status" json:"itsm_ticket_status" gorm:"column:itsm_ticket_status"`
+	ItsmTicketStateID int           `db:"itsm_ticket_state_id" json:"itsm_ticket_state_id" gorm:"column:itsm_ticket_state_id"` // nolint
 }
 
 // ValidateCreate validate strategy spec when it is created.

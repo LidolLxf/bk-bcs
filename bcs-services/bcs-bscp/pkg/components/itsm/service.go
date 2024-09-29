@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/cc"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/constant"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/logs"
 )
@@ -162,8 +163,8 @@ func GetStateApproveByWorkfolw(workflowID int) (int, error) {
 		return 0, errors.New(resp.Message)
 	}
 	for _, v := range resp.Data.States {
-		// 来自于创建的配置节点
-		if v.Name == "负责人审批" {
+		// 来自于创建的配置节点名称
+		if v.Name == constant.ItsmApproveNodeName {
 			return v.Id, nil
 		}
 	}

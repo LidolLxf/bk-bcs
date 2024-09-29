@@ -25,9 +25,8 @@ import (
 )
 
 var (
-	createTicketPath = "/itsm/create_ticket/"
-	// approveTicketPath = "/itsm/approve/"
-	approveTicketPath = "/itsm/operate_node/"
+	createTicketPath  = "/itsm/create_ticket/"
+	approveTicketPath = "/itsm/approve/"
 )
 
 // CreateTicketResp itsm create ticket resp
@@ -42,10 +41,11 @@ type CreateTicketData struct {
 	SN        string `json:"sn"`
 	ID        int    `json:"id"`
 	TicketURL string `json:"ticket_url"`
+	StateID   string `json:"state_id"`
 }
 
 // CreateTicket create itsm ticket
-func CreateTicket(reqData map[string]interface{}) (*CreateTicketData, error) {
+func CreateTicket(ctx context.Context, reqData map[string]interface{}) (*CreateTicketData, error) {
 	itsmConf := cc.DataService().ITSM
 	// 默认使用网关访问，如果为外部版，则使用ESB访问
 	host := itsmConf.GatewayHost
@@ -74,7 +74,7 @@ func CreateTicket(reqData map[string]interface{}) (*CreateTicketData, error) {
 }
 
 // UpdateTicketByApporver update itsm ticket by approver
-func UpdateTicketByApporver(reqData map[string]interface{}) (*CreateTicketData, error) {
+func UpdateTicketByApporver(ctx context.Context, reqData map[string]interface{}) (*CreateTicketData, error) {
 	itsmConf := cc.DataService().ITSM
 	// 默认使用网关访问，如果为外部版，则使用ESB访问
 	host := itsmConf.GatewayHost
@@ -84,7 +84,7 @@ func UpdateTicketByApporver(reqData map[string]interface{}) (*CreateTicketData, 
 	reqURL := fmt.Sprintf("%s%s", host, approveTicketPath)
 
 	// 请求API
-	body, err := ItsmRequest(context.Background(), http.MethodPost, reqURL, reqData)
+	body, err := ItsmRequest(ctx, http.MethodPost, reqURL, reqData)
 	if err != nil {
 		logs.Errorf("request itsm update ticket failed, %s", err.Error())
 		return nil, fmt.Errorf("request itsm update ticket failed, %s", err.Error())
