@@ -16,16 +16,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"google.golang.org/protobuf/types/known/structpb"
 	"gorm.io/gorm"
 
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/cc"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/components/itsm"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/constant"
+	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/criteria/enumor"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/gen"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/dal/table"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/kit"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/logs"
+	pbcs "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/cache-service"
 	pbgroup "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/core/group"
 	pbds "github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/protocol/data-service"
 	"github.com/TencentBlueKing/bk-bcs/bcs-services/bcs-bscp/pkg/runtime/selector"
@@ -146,41 +152,259 @@ func (s *Service) Publish(ctx context.Context, req *pbds.PublishReq) (*pbds.Publ
 	return resp, nil
 }
 
-// checkAppHaveCredentials check if there is available credential for app.
-// 1. credential scope can match app name.
-// 2. credential is enabled.
-func (s *Service) checkAppHaveCredentials(grpcKit *kit.Kit, bizID, appID uint32) (bool, error) {
-	app, err := s.dao.App().Get(grpcKit, bizID, appID)
+// SubmitPublishApprove submit publish strategy.
+// nolint funlen
+func (s *Service) SubmitPublishApprove(
+	ctx context.Context, req *pbds.SubmitPublishApproveReq) (*pbds.PublishResp, error) {
+	grpcKit := kit.FromGrpcContext(ctx)
+
+	app, err := s.dao.App().Get(grpcKit, req.BizId, req.AppId)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	matchedCredentials := make([]uint32, 0)
-	scopes, err := s.dao.CredentialScope().ListAll(grpcKit, bizID)
+
+	release, err := s.dao.Release().Get(grpcKit, req.BizId, req.AppId, req.ReleaseId)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	if len(scopes) == 0 {
-		return false, nil
+	if release.Spec.Deprecated {
+		return nil, fmt.Errorf("release %s is deprecated, can not be submited", release.Spec.Name)
 	}
-	for _, scope := range scopes {
-		match, e := scope.Spec.CredentialScope.MatchApp(app.Spec.Name)
-		if e != nil {
-			return false, e
+
+	var isRollback bool
+	tx := s.dao.GenQuery().Begin()
+	defer func() {
+		if isRollback {
+			if rErr := tx.Rollback(); rErr != nil {
+				logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+			}
 		}
-		if match {
-			matchedCredentials = append(matchedCredentials, scope.Attachment.CredentialId)
+	}()
+
+	// group name
+	var groupIDs []uint32
+	var groupName []string
+	// group 解析处理, 通过label创建
+	groupIDs, groupName, err = s.parseGroup(grpcKit, req, tx)
+	if err != nil {
+		isRollback = true
+		logs.Errorf("parse group failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
+	// parse publish option
+	opt := s.parsePublishOption(req, app)
+	opt.Groups = groupIDs
+	opt.Revision = &table.CreatedRevision{
+		Creator: grpcKit.User,
+	}
+
+	pshID, err := s.dao.Publish().SubmitWithTx(grpcKit, tx, opt)
+	if err != nil {
+		isRollback = true
+		logs.Errorf("publish strategy failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
+	if req.All {
+		groupName = []string{"all"}
+	}
+
+	resInstance := fmt.Sprintf("releases_name: %s\ngroup: %s", release.Spec.Name, strings.Join(groupName, ","))
+
+	// audit this to create strategy details
+	ad := s.dao.AuditDao().DecoratorV3(grpcKit, opt.BizID, &table.AuditField{
+		OperateWay:       grpcKit.OperateWay,
+		Action:           enumor.PublishVersionConfig,
+		ResourceInstance: resInstance,
+		Status:           enumor.AuditStatus(opt.PublishStatus),
+		AppId:            app.AppID(),
+		StrategyId:       pshID,
+		IsCompare:        req.IsCompare,
+	}).PrepareCreateByInstance(pshID, req)
+	if err = ad.Do(tx.Query); err != nil {
+		isRollback = true
+		return nil, err
+	}
+
+	// 定时上线
+	err = s.setPublishTime(grpcKit, pshID, req)
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+
+	// itsm流程创建ticket
+	if app.Spec.IsApprove {
+		scope := strings.Join(groupName, ",")
+		ticketData, errCreate := s.submitCreateApproveTicket(
+			grpcKit, app, release.Spec.Name, scope, ad.GetAuditID(), release.ID)
+		if errCreate != nil {
+			isRollback = true
+			logs.Errorf("submit create approve ticket, err: %v, rid: %s", errCreate, grpcKit.Rid)
+			return nil, errCreate
+		}
+
+		err = s.dao.Strategy().UpdateByID(grpcKit, tx, pshID, map[string]interface{}{
+			"itsm_ticket_type":     constant.ItsmTicketTypeCreate,
+			"itsm_ticket_url":      ticketData.TicketURL,
+			"itsm_ticket_sn":       ticketData.SN,
+			"itsm_ticket_status":   constant.ItsmTicketStatusCreated,
+			"itsm_ticket_state_id": ticketData.StateID,
+		})
+
+		if err != nil {
+			isRollback = true
+			logs.Errorf("update strategy by id err: %v, rid: %s", err, grpcKit.Rid)
+			return nil, err
 		}
 	}
-	credentials, e := s.dao.Credential().BatchListByIDs(grpcKit, bizID, matchedCredentials)
-	if e != nil {
-		return false, e
+
+	haveCredentials, err := s.checkAppHaveCredentials(grpcKit, req.BizId, req.AppId)
+	if err != nil {
+		isRollback = true
+		return nil, err
 	}
-	for _, credential := range credentials {
-		if credential.Spec.Enable {
-			return true, nil
+
+	if err = tx.Commit(); err != nil {
+		isRollback = true
+		logs.Errorf("commit transaction failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+
+	resp := &pbds.PublishResp{
+		PublishedStrategyHistoryId: pshID,
+		HaveCredentials:            haveCredentials,
+	}
+	return resp, nil
+}
+
+// Approve publish approve.
+// nolint funlen
+func (s *Service) Approve(ctx context.Context, req *pbds.ApproveReq) (*pbds.ApproveResp, error) {
+	grpcKit := kit.FromGrpcContext(ctx)
+
+	var isRollback bool
+	tx := s.dao.GenQuery().Begin()
+	defer func() {
+		if isRollback {
+			if rErr := tx.Rollback(); rErr != nil {
+				logs.Errorf("transaction rollback failed, err: %v, rid: %s", rErr, grpcKit.Rid)
+			}
+		}
+	}()
+
+	release, err := s.dao.Release().Get(grpcKit, req.BizId, req.AppId, req.ReleaseId)
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+	if release.Spec.Deprecated {
+		isRollback = true
+		return nil, fmt.Errorf("release %s is deprecated, can not be revoke", release.Spec.Name)
+	}
+
+	strategy, err := s.dao.Strategy().GetLast(grpcKit, req.BizId, req.AppId, req.ReleaseId)
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+
+	var updateContent map[string]interface{}
+	itsmUpdata := make(map[string]interface{})
+	switch req.PublishStatus {
+	case string(table.RevokedPublish):
+		updateContent, err = s.revokeApprove(grpcKit, req, strategy)
+		if err != nil {
+			isRollback = true
+			return nil, err
+		}
+		itsmUpdata = map[string]interface{}{
+			"sn":             strategy.Spec.ItsmTicketSn,
+			"operator":       grpcKit.User,
+			"action_type":    "WITHDRAW",
+			"action_message": fmt.Sprintf("BSCP 代理用户 %s 撤回: %s", grpcKit.User, req.Reason),
+		}
+	case string(table.RejectedApproval):
+		updateContent, err = s.rejectApprove(grpcKit, req, strategy)
+		if err != nil {
+			isRollback = true
+			return nil, err
+		}
+		itsmUpdata = map[string]interface{}{
+			"sn":       strategy.Spec.ItsmTicketSn,
+			"state_id": strategy.Spec.ItsmTicketStateID,
+			"approver": grpcKit.User,
+			"action":   "false",
+			"remark":   req.Reason,
+		}
+	case string(table.PendPublish):
+		updateContent, err = s.passApprove(grpcKit, tx, req, strategy)
+		if err != nil {
+			isRollback = true
+			return nil, err
+		}
+		itsmUpdata = map[string]interface{}{
+			"sn":       strategy.Spec.ItsmTicketSn,
+			"state_id": strategy.Spec.ItsmTicketStateID,
+			"approver": grpcKit.User,
+			"action":   "true",
+		}
+	case string(table.AlreadyPublish):
+		updateContent, err = s.publishApprove(grpcKit, tx, req, strategy)
+		if err != nil {
+			isRollback = true
+			return nil, err
+		}
+	default:
+		isRollback = true
+		return nil, fmt.Errorf("invalid publish_status: %s", req.PublishStatus)
+	}
+
+	updateContent["reviser"] = grpcKit.User
+	err = s.dao.Strategy().UpdateByID(grpcKit, tx, strategy.ID, updateContent)
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+
+	// update audit details
+	err = s.dao.AuditDao().UpdateByStrategyID(grpcKit, tx, strategy.ID, map[string]interface{}{
+		"status": updateContent["publish_status"],
+	})
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+
+	if req.PublishStatus == string(table.RevokedPublish) {
+		err = itsm.WithdrawTicket(grpcKit.Ctx, itsmUpdata)
+		if err != nil {
+			isRollback = true
+			return nil, err
 		}
 	}
-	return false, nil
+
+	if req.PublishStatus == string(table.RejectedApproval) || req.PublishStatus == string(table.PendPublish) {
+		err = itsm.UpdateTicketByApporver(grpcKit.Ctx, itsmUpdata)
+		if err != nil {
+			isRollback = true
+			return nil, err
+		}
+	}
+
+	haveCredentials, err := s.checkAppHaveCredentials(grpcKit, req.BizId, req.AppId)
+	if err != nil {
+		isRollback = true
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		logs.Errorf("commit transaction failed, err: %v, rid: %s", err, grpcKit.Rid)
+		return nil, err
+	}
+	return &pbds.ApproveResp{
+		HaveCredentials: haveCredentials,
+	}, nil
 }
 
 // GenerateReleaseAndPublish generate release and publish.
@@ -308,6 +532,244 @@ func (s *Service) GenerateReleaseAndPublish(ctx context.Context, req *pbds.Gener
 		return nil, err
 	}
 	return &pbds.PublishResp{PublishedStrategyHistoryId: pshID}, nil
+}
+
+// revokeApprove revoke publish approve.
+func (s *Service) revokeApprove(
+	kit *kit.Kit, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	app, err := s.dao.App().Get(kit, req.BizId, req.AppId)
+	if err != nil {
+		return nil, err
+	}
+
+	// 有服务权限的人才能撤销
+	if app.Revision.Creator != kit.User {
+		return nil, errors.New("no permission to revoke")
+	}
+
+	// 只有待上线以及待审批的类型才允许撤回
+	if strategy.Spec.PublishStatus != table.PendPublish && strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("revoked not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	return map[string]interface{}{
+		"publish_status":    table.RevokedPublish,
+		"reject_reason":     req.Reason,
+		"approver_progress": kit.User,
+	}, nil
+}
+
+// rejectApprove reject publish approve.
+func (s *Service) rejectApprove(
+	kit *kit.Kit, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("rejected not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	if req.Reason == "" {
+		return nil, errors.New("reason can not empty")
+	}
+
+	// 判断是否在审批人队列
+	isApprover := false
+	users := strings.Split(strategy.Spec.ApproverProgress, ",")
+	for _, v := range users {
+		if v == kit.User {
+			isApprover = true
+		}
+
+	}
+
+	// 需要审批但不是审批人的情况返回无权限审批
+	if !isApprover {
+		return nil, errors.New("no permission to approve")
+	}
+
+	return map[string]interface{}{
+		"publish_status":    table.RejectedApproval,
+		"reject_reason":     req.Reason,
+		"approver_progress": kit.User,
+	}, nil
+}
+
+// passApprove pass publish approve.
+func (s *Service) passApprove(
+	kit *kit.Kit, tx *gen.QueryTx, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendApproval {
+		return nil, fmt.Errorf("pass not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	// 存在app更改成不审批的情况，要根据审批人来确定是会签还是或签
+	// 判断是否在审批人队列
+	isApprover := false
+	approverProgress := strategy.Spec.ApproverProgress
+	progressUsers := strings.Split(approverProgress, ",")
+	var newProgressUsers []string
+	for _, v := range progressUsers {
+		if v == kit.User {
+			isApprover = true
+			continue
+		}
+		newProgressUsers = append(newProgressUsers, v)
+	}
+
+	// 不是审批人的情况返回无权限审批
+	if !isApprover {
+		return nil, errors.New("no permission to approve")
+	}
+
+	result := make(map[string]interface{})
+	publishStatus := table.PendApproval
+	// 或签通过
+	if strings.Contains(strategy.Spec.Approver, "|") || strategy.Spec.Approver == kit.User {
+		publishStatus = table.PendPublish
+		result["approver_progress"] = kit.User // 需要更新下给前端展示
+	} else {
+		// 会签
+		// 最后一个的情况下，直接待上线
+		if len(newProgressUsers) == 0 {
+			publishStatus = table.PendPublish
+			result["approver_progress"] = strategy.Spec.Approver
+		} else {
+			approverProgress = strings.Join(newProgressUsers, ",")
+			result["approver_progress"] = approverProgress
+		}
+	}
+
+	// 自动上线则直接上线
+	if publishStatus == table.PendPublish && strategy.Spec.PublishType == table.Automatically {
+		opt := types.PublishOption{
+			BizID:     req.BizId,
+			AppID:     req.AppId,
+			ReleaseID: req.ReleaseId,
+			All:       false,
+		}
+
+		if len(strategy.Spec.Scope.Groups) == 0 {
+			opt.All = true
+		}
+
+		err := s.dao.Publish().UpsertPublishWithTx(kit, tx, &opt, strategy)
+
+		if err != nil {
+			return nil, err
+		}
+		publishStatus = table.AlreadyPublish
+	}
+
+	result["publish_status"] = publishStatus
+	return result, nil
+}
+
+// publishApprove publish approve.
+func (s *Service) publishApprove(
+	kit *kit.Kit, tx *gen.QueryTx, req *pbds.ApproveReq, strategy *table.Strategy) (map[string]interface{}, error) {
+
+	if strategy.Spec.PublishStatus != table.PendPublish {
+		return nil, fmt.Errorf("publish not allowed, current publish status is: %s", strategy.Spec.PublishStatus)
+	}
+
+	opt := types.PublishOption{
+		BizID:     req.BizId,
+		AppID:     req.AppId,
+		ReleaseID: req.ReleaseId,
+		All:       false,
+	}
+
+	if len(strategy.Spec.Scope.Groups) == 0 {
+		opt.All = true
+	}
+
+	err := s.dao.Publish().UpsertPublishWithTx(kit, tx, &opt, strategy)
+
+	if err != nil {
+		return nil, err
+	}
+	publishStatus := table.AlreadyPublish
+
+	return map[string]interface{}{
+		"pub_state":      table.Publishing,
+		"publish_status": publishStatus,
+	}, nil
+}
+
+// parse publish option
+func (s *Service) parsePublishOption(req *pbds.SubmitPublishApproveReq, app *table.App) *types.PublishOption {
+
+	opt := &types.PublishOption{
+		BizID:         req.BizId,
+		AppID:         req.AppId,
+		ReleaseID:     req.ReleaseId,
+		All:           req.All,
+		Default:       req.Default,
+		Memo:          req.Memo,
+		PublishType:   table.PublishType(req.PublishType),
+		PublishTime:   req.PublishTime,
+		PublishStatus: table.PendPublish,
+		PubState:      string(table.Publishing),
+	}
+
+	// if approval required, current approver required, pub_state unpublished
+	if app.Spec.IsApprove {
+		opt.PublishStatus = table.PendApproval
+		opt.Approver = app.Spec.Approver
+		opt.ApproverProgress = app.Spec.Approver
+		opt.PubState = string(table.Unpublished)
+	}
+
+	// 后续app改审批方式的时候可以判断是或签还是会签
+	if app.Spec.ApproveType == table.OrSign {
+		opt.Approver = app.Spec.Approver
+		approver := strings.Split(app.Spec.Approver, ",")
+		opt.Approver = strings.Join(approver, "|")
+	}
+
+	// publish immediately
+	if req.PublishType == string(table.Immediately) {
+		opt.PublishStatus = table.AlreadyPublish
+	}
+
+	return opt
+}
+
+// checkAppHaveCredentials check if there is available credential for app.
+// 1. credential scope can match app name.
+// 2. credential is enabled.
+func (s *Service) checkAppHaveCredentials(grpcKit *kit.Kit, bizID, appID uint32) (bool, error) {
+	app, err := s.dao.App().Get(grpcKit, bizID, appID)
+	if err != nil {
+		return false, err
+	}
+	matchedCredentials := make([]uint32, 0)
+	scopes, err := s.dao.CredentialScope().ListAll(grpcKit, bizID)
+	if err != nil {
+		return false, err
+	}
+	if len(scopes) == 0 {
+		return false, nil
+	}
+	for _, scope := range scopes {
+		match, e := scope.Spec.CredentialScope.MatchApp(app.Spec.Name)
+		if e != nil {
+			return false, e
+		}
+		if match {
+			matchedCredentials = append(matchedCredentials, scope.Attachment.CredentialId)
+		}
+	}
+	credentials, e := s.dao.Credential().BatchListByIDs(grpcKit, bizID, matchedCredentials)
+	if e != nil {
+		return false, e
+	}
+	for _, credential := range credentials {
+		if credential.Spec.Enable {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *Service) genReleaseAndPublishGroupID(grpcKit *kit.Kit, tx *gen.QueryTx,
@@ -455,4 +917,183 @@ func (s *Service) createReleasedHook(grpcKit *kit.Kit, tx *gen.QueryTx, bizID, a
 		return err
 	}
 	return nil
+}
+
+// submitCreateApproveTicket create new itsm create approve ticket
+// nolint funlen
+func (s *Service) submitCreateApproveTicket(
+	kt *kit.Kit, app *table.App, releaseName, scope string, aduitId, releaseID uint32) (*itsm.CreateTicketData, error) {
+	var serviceID int
+	itsmConf := cc.DataService().ITSM
+
+	// 或签和会签是不同的模板
+	var getConfigKey string
+	var itsmConfServiceID int
+	var stateId int
+	switch app.Spec.ApproveType {
+	case table.OrSign:
+		getConfigKey = constant.CreateOrSignApproveItsmServiceID
+		itsmConfServiceID = itsmConf.CreateOrSignServiceID
+	case table.CountSign:
+		getConfigKey = constant.CreateCountSignApproveItsmServiceID
+		itsmConfServiceID = itsmConf.CreateCountSignServiceID
+	}
+	if itsmConf.AutoRegister {
+		itsmConfig, err := s.dao.ItsmConfig().GetConfig(kt, getConfigKey)
+		if err != nil {
+			return nil, err
+		}
+		serviceID = itsmConfig.Value
+		stateId = itsmConfig.StateApproveId
+	} else {
+		serviceID = itsmConfServiceID
+		// 获取流程信息及workflow id
+		workflowId, err := itsm.GetWorkflowByService(serviceID)
+		if err != nil {
+			return nil, err
+		}
+
+		stateApproveId, err := itsm.GetStateApproveByWorkfolw(workflowId)
+		if err != nil {
+			return nil, err
+		}
+		stateId = stateApproveId
+
+	}
+
+	// 获取所有的业务信息
+	bizList, err := s.esb.Cmdb().ListAllBusiness(kt.Ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(bizList.Info) == 0 {
+		return nil, fmt.Errorf("biz list is empty")
+	}
+
+	var bizName string
+	for _, biz := range bizList.Info {
+		if biz.BizID == int64(app.BizID) {
+			bizName = biz.BizName
+			break
+		}
+	}
+
+	fields := []map[string]interface{}{
+		{
+			"key":   "title",
+			"value": "服务配置中心(BSCP)版本上线审批",
+		}, {
+			"key":   "BIZ",
+			"value": fmt.Sprintf(bizName+"(%d)", app.BizID),
+		}, {
+			"key":   "APP",
+			"value": app.Spec.Name,
+		}, {
+			"key":   "VERSION_NAME",
+			"value": releaseName,
+		}, {
+			"key":   "SCOPE",
+			"value": scope,
+		}, {
+			"key":   "COMPARE",
+			"value": fmt.Sprintf("%s/space/2/records/all?id=%d", cc.DataService().Esb.BscpHost, aduitId),
+		}, {
+			"key":   "BIZ_ID",
+			"value": app.BizID,
+		}, {
+			"key":   "APP_ID",
+			"value": app.ID,
+		}, {
+			"key":   "RELEASE_ID",
+			"value": releaseID,
+		},
+	}
+
+	stateApproveId := strconv.Itoa(stateId)
+	reqData := map[string]interface{}{
+		"creator":    kt.User,
+		"service_id": serviceID,
+		"fields":     fields,
+		"meta": map[string]interface{}{
+			"state_processors": map[string]interface{}{
+				stateApproveId: app.Spec.Approver,
+			}},
+	}
+
+	resp, err := itsm.CreateTicket(kt.Ctx, reqData)
+	if err != nil {
+		return nil, err
+	}
+
+	resp.StateID = stateId
+	return resp, nil
+}
+
+// 定时上线
+func (s *Service) setPublishTime(kt *kit.Kit, pshID uint32, req *pbds.SubmitPublishApproveReq) error {
+	if req.PublishType == string(table.Periodically) {
+		// 通过当前时区计算unix
+		location := time.Now().Location()
+		publishTime, err := time.ParseInLocation(time.DateTime, req.PublishTime, location)
+		if err != nil {
+			logs.Errorf("parse time failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+
+		_, err = s.cs.SetPublishTime(kt.Ctx, &pbcs.SetPublishTimeReq{
+			BizId:       req.BizId,
+			StrategyId:  pshID,
+			PublishTime: publishTime.UTC().Unix(),
+			AppId:       req.AppId,
+		})
+		if err != nil {
+			logs.Errorf("set publish time failed, err: %v, rid: %s", err, kt.Rid)
+			return err
+		}
+	}
+	return nil
+}
+
+// group 解析处理, 通过label创建
+func (s *Service) parseGroup(
+	grpcKit *kit.Kit, req *pbds.SubmitPublishApproveReq, tx *gen.QueryTx) ([]uint32, []string, error) {
+	// group name
+	groupIDs := make([]uint32, 0)
+	groupName := []string{}
+	if !req.All {
+		if req.GrayPublishMode == "" {
+			// !NOTE: Compatible with previous pipelined plugins version
+			req.GrayPublishMode = table.PublishByGroups.String()
+		}
+		publishMode := table.GrayPublishMode(req.GrayPublishMode)
+		if e := publishMode.Validate(); e != nil {
+			return groupIDs, groupName, e
+		}
+		// validate and query group ids.
+		if publishMode == table.PublishByGroups {
+			for _, groupID := range req.Groups {
+				if groupID == 0 {
+					groupIDs = append(groupIDs, groupID)
+					continue
+				}
+				group, e := s.dao.Group().Get(grpcKit, groupID, req.BizId)
+				if e != nil {
+					return groupIDs, groupName, fmt.Errorf("group %d not exist", groupID)
+				}
+				groupIDs = append(groupIDs, group.ID)
+				groupName = append(groupName, group.Spec.Name)
+			}
+		}
+		if publishMode == table.PublishByLabels {
+			groupID, gErr := s.getOrCreateGroupByLabels(grpcKit, tx, req.BizId, req.AppId, req.GroupName, req.Labels)
+			if gErr != nil {
+				logs.Errorf("create group by labels failed, err: %v, rid: %s", gErr, grpcKit.Rid)
+				return groupIDs, groupName, fmt.Errorf("group %d not exist", gErr)
+			}
+			groupIDs = append(groupIDs, groupID)
+			groupName = append(groupName, req.GroupName)
+		}
+	}
+	return groupIDs, groupName, nil
 }

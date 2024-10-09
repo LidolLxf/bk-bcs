@@ -86,6 +86,7 @@ type dataService struct {
 	sd      serviced.Service
 	daoSet  dao.Set
 	vault   vault.Set
+	ssd     serviced.ServiceDiscover
 }
 
 // prepare do prepare jobs before run data service.
@@ -121,6 +122,13 @@ func (ds *dataService) prepare(opt *options.Option) error {
 	}
 
 	ds.sd = sd
+
+	ssd, err := serviced.NewServiceD(etcdOpt, svcOpt)
+	if err != nil {
+		return fmt.Errorf("new service faield, err: %v", err)
+	}
+
+	ds.ssd = ssd
 
 	// init bscp control tool
 	if err = ctl.LoadCtl(ctl.WithBasics(sd)...); err != nil {
@@ -197,7 +205,7 @@ func (ds *dataService) listenAndServe() error {
 	}
 
 	serve := grpc.NewServer(opts...)
-	svc, err := service.NewService(ds.sd, ds.daoSet, ds.vault)
+	svc, err := service.NewService(ds.sd, ds.ssd, ds.daoSet, ds.vault)
 	if err != nil {
 		return err
 	}
