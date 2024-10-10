@@ -71,6 +71,7 @@ type Order string
 type QueryFilter struct {
 	Creator       []string // -- 代表无创建者
 	Name          string
+	CreateSource  string
 	LabelSelector []*clusterRes.LabelSelector
 	IP            string   // IP 过滤条件，包括IPV4、IPV6、HostIP，目前仅 Pod 支持
 	Status        []string // 状态过滤条件，目前仅 Deployment 支持
@@ -225,6 +226,21 @@ func (f *QueryFilter) NameFilter(resources []*storage.Resource) []*storage.Resou
 	}
 	for _, v := range resources {
 		if strings.Contains(mapx.GetStr(v.Data, "metadata.name"), f.Name) {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+// CreateSourceFilter 创建来源过滤器
+func (f *QueryFilter) CreateSourceFilter(resources []*storage.Resource) []*storage.Resource {
+	result := []*storage.Resource{}
+	if f.CreateSource == "" {
+		return resources
+	}
+	for _, v := range resources {
+		createSource, _ := formatter.ParseCreateSource(v.Data)
+		if createSource == f.CreateSource {
 			result = append(result, v)
 		}
 	}

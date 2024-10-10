@@ -10456,6 +10456,10 @@
           "type": "integer",
           "format": "int64",
           "title": "offset"
+        },
+        "createSource": {
+          "type": "string",
+          "title": "createSource"
         }
       },
       "description": "获取多集群自定义资源请求体",
@@ -10529,6 +10533,10 @@
           "type": "integer",
           "format": "int64",
           "title": "offset"
+        },
+        "createSource": {
+          "type": "string",
+          "title": "createSource"
         }
       },
       "description": "获取多集群资源请求体",
@@ -10772,6 +10780,10 @@
         "name": {
           "type": "string",
           "title": "name"
+        },
+        "createSource": {
+          "type": "string",
+          "title": "createSource"
         }
       },
       "description": "获取多集群资源数量请求体",
@@ -11282,6 +11294,9 @@
           "items": {
             "$ref": "#/definitions/clusterresourcesLabelSelector"
           }
+        },
+        "createSource": {
+          "type": "string"
         }
       }
     },

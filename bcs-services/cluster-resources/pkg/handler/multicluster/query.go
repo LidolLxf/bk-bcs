@@ -90,7 +90,8 @@ func (q *StorageQuery) Fetch(ctx context.Context, groupVersion, kind string) (ma
 	}
 	// 第二次过滤
 	resources = ApplyFilter(resources, q.QueryFilter.CreatorFilter, q.QueryFilter.NameFilter,
-		q.QueryFilter.StatusFilter, q.QueryFilter.LabelSelectorFilter, q.QueryFilter.IPFilter)
+		q.QueryFilter.StatusFilter, q.QueryFilter.LabelSelectorFilter, q.QueryFilter.IPFilter,
+		q.QueryFilter.CreateSourceFilter)
 	total := len(resources)
 	resources = q.QueryFilter.Page(resources)
 	resp := buildList(ctx, resources)
@@ -132,10 +133,12 @@ func (q *APIServerQuery) Fetch(ctx context.Context, groupVersion, kind string) (
 	if err != nil {
 		return nil, err
 	}
-	resources = ApplyFilter(resources, q.ViewFilter.CreatorFilter, q.ViewFilter.NameFilter)
+	resources = ApplyFilter(resources, q.ViewFilter.CreatorFilter, q.ViewFilter.NameFilter,
+		q.ViewFilter.CreateSourceFilter)
 	// 第二次过滤
 	resources = ApplyFilter(resources, q.QueryFilter.CreatorFilter, q.QueryFilter.NameFilter,
-		q.QueryFilter.StatusFilter, q.QueryFilter.LabelSelectorFilter, q.QueryFilter.IPFilter)
+		q.QueryFilter.StatusFilter, q.QueryFilter.LabelSelectorFilter, q.QueryFilter.IPFilter,
+		q.QueryFilter.CreateSourceFilter)
 	total := len(resources)
 	resources = q.QueryFilter.Page(resources)
 	resp := buildList(ctx, resources)
@@ -537,6 +540,7 @@ func viewQueryToQueryFilter(filter *entity.ViewFilter) QueryFilter {
 		Creator:       filter.Creator,
 		Name:          filter.Name,
 		LabelSelector: ls,
+		CreateSource:  filter.CreateSource,
 	}
 }
 

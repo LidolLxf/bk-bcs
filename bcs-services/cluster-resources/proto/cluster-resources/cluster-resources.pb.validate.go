@@ -7909,6 +7909,8 @@ func (m *ViewFilter) validate(all bool) error {
 
 	}
 
+	// no validation rules for CreateSource
+
 	if len(errors) > 0 {
 		return ViewFilterMultiError(errors)
 	}
@@ -13112,6 +13114,8 @@ func (m *FetchMultiClusterResourceReq) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	// no validation rules for CreateSource
+
 	if len(errors) > 0 {
 		return FetchMultiClusterResourceReqMultiError(errors)
 	}
@@ -13579,6 +13583,8 @@ func (m *FetchMultiClusterCustomResourceReq) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	// no validation rules for CreateSource
+
 	if len(errors) > 0 {
 		return FetchMultiClusterCustomResourceReqMultiError(errors)
 	}
@@ -13789,6 +13795,8 @@ func (m *MultiClusterResourceCountReq) validate(all bool) error {
 	}
 
 	// no validation rules for Name
+
+	// no validation rules for CreateSource
 
 	if len(errors) > 0 {
 		return MultiClusterResourceCountReqMultiError(errors)

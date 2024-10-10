@@ -34,6 +34,7 @@ type ViewFilter struct {
 	Name          string          `json:"name" bson:"name"`
 	Creator       []string        `json:"creator" bson:"creator"`
 	LabelSelector []LabelSelector `json:"labelSelector" bson:"labelSelector"`
+	CreateSource  string          `json:"createSource" bson:"createSource"`
 }
 
 // ViewScope 视图可见范围
@@ -102,6 +103,7 @@ func (v *View) ToMap() map[string]interface{} {
 			"name":          v.Filter.Name,
 			"creator":       v.Filter.Creator,
 			"labelSelector": ls,
+			"createSource":  v.Filter.CreateSource,
 		}
 	}
 	return m

@@ -382,6 +382,7 @@ func protoFilterToFilter(filter *clusterRes.ViewFilter) *entity.ViewFilter {
 		Name:          filter.GetName(),
 		Creator:       filter.GetCreator(),
 		LabelSelector: ls,
+		CreateSource:  filter.GetCreateSource(),
 	}
 }
 

@@ -2897,6 +2897,7 @@ message ViewFilter {
 	string name = 1;
 	repeated string creator = 2;
 	repeated LabelSelector labelSelector = 3;
+	string createSource = 4;
 }
 
 message CreateViewConfigReq {
@@ -3550,6 +3551,9 @@ message FetchMultiClusterResourceReq {
 	uint32 offset = 13 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
 		title: "offset"
 	}, (validate.rules).uint32 = {gte: 0}];
+	string createSource = 14 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+		title: "createSource"
+	}];
 }
 
 message FetchMultiClusterApiResourcesReq {
@@ -3616,6 +3620,9 @@ message FetchMultiClusterCustomResourceReq {
 	uint32 offset = 13 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
 		title: "offset"
 	}, (validate.rules).uint32 = {gte: 0}];
+	string createSource = 14 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+		title: "createSource"
+	}];
 }
 
 message MultiClusterResourceCountReq {
@@ -3639,5 +3646,8 @@ message MultiClusterResourceCountReq {
 	}];
 	string name = 6 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
 		title: "name"
+	}];
+	string createSource = 7 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+		title: "createSource"
 	}];
 }
