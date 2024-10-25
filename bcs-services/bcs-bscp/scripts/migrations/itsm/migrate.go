@@ -44,7 +44,7 @@ var (
 func InitServices() error {
 
 	// initial DAO set
-	set, err := dao.NewDaoSet(cc.DataService().Sharding, cc.DataService().Credential)
+	set, err := dao.NewDaoSet(cc.DataService().Sharding, cc.DataService().Credential, cc.DataService().Gorm)
 	if err != nil {
 		return fmt.Errorf("initial dao set failed, err: %v", err)
 	}
