@@ -92,10 +92,6 @@ func (l *ListReleaseV2Action) list() (*helmmanager.ReleaseListData, error) {
 		dbReleases = append(dbReleases, item.Transfer2Proto())
 	}
 
-	if cluster.IsShared && len(option.Namespace) == 0 {
-		return l.mergeReleases(nil, dbReleases), nil
-	}
-
 	// get release from cluster
 	_, origin, err := l.releaseHandler.Cluster(clusterID).ListV2(l.ctx, option)
 	if err != nil {
