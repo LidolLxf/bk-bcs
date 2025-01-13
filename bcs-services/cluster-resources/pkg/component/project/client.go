@@ -24,6 +24,7 @@ import (
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/common/runtime"
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/config"
 	log "github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/logging"
+	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/util/http"
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/util/httpclient"
 )
 
@@ -98,9 +99,15 @@ func (c *ProjClient) fetchProjInfoWithCache(ctx context.Context, projectID strin
 func (c *ProjClient) fetchProjInfo(ctx context.Context, projectID string) (*Project, error) {
 	url := fmt.Sprintf("%s/bcsapi/v4/bcsproject/v1/projects/%s", config.G.BCSAPIGW.Host, projectID)
 
-	resp, err := httpclient.GetClient().R().
+	httpRClient := httpclient.GetClient().R().
 		SetContext(ctx).
-		SetHeader("X-Project-Username", ""). // bcs_project 要求有这个header
+		SetHeader("X-Project-Username", "") // bcs_project 要求有这个header
+
+	laneIDKey, laneIDValue := http.GetLaneID(ctx)
+	if laneIDKey != "" {
+		httpRClient.SetHeader(laneIDKey, laneIDValue) // 泳道特性
+	}
+	resp, err := httpRClient.
 		SetAuthToken(config.G.BCSAPIGW.AuthToken).
 		Get(url)
 

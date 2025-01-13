@@ -24,6 +24,7 @@ import (
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/common/runtime"
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/config"
 	log "github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/logging"
+	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/util/http"
 	"github.com/Tencent/bk-bcs/bcs-services/cluster-resources/pkg/util/httpclient"
 )
 
@@ -94,8 +95,14 @@ func (c *CMClient) fetchClusterInfoWithCache(ctx context.Context, clusterID stri
 func (c *CMClient) fetchClusterInfo(ctx context.Context, clusterID string) (*Cluster, error) {
 	url := fmt.Sprintf("%s/bcsapi/v4/clustermanager/v1/cluster/%s", config.G.BCSAPIGW.Host, clusterID)
 
-	resp, err := httpclient.GetClient().R().
-		SetContext(ctx).
+	httpRClient := httpclient.GetClient().R().
+		SetContext(ctx)
+
+	laneIDKey, laneIDValue := http.GetLaneID(ctx)
+	if laneIDKey != "" {
+		httpRClient.SetHeader(laneIDKey, laneIDValue) // 泳道特性
+	}
+	resp, err := httpRClient.
 		SetAuthToken(config.G.BCSAPIGW.AuthToken).
 		Get(url)
 

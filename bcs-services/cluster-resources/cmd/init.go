@@ -35,6 +35,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/tmc/grpc-websocket-proxy/wsproxy"
 	"go-micro.dev/v4"
+	"github.com/Tencent/bk-bcs/bcs-common/pkg/header"
 	"go-micro.dev/v4/registry"
 	"go-micro.dev/v4/server"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
@@ -306,7 +307,7 @@ func (crSvc *clusterResourcesService) initTLSConfig() error {
 // initHTTPService 初始化 HTTP 服务
 func (crSvc *clusterResourcesService) initHTTPService() error {
 	rmMux := runtime.NewServeMux(
-		runtime.WithIncomingHeaderMatcher(httpUtil.CustomHeaderMatcher),
+		runtime.WithIncomingHeaderMatcher(header.CustomHeaderMatcher),
 		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{OrigName: true, EmitDefaults: true}),
 	)
 
