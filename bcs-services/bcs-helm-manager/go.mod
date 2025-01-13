@@ -1,8 +1,9 @@
 module github.com/Tencent/bk-bcs/bcs-services/bcs-helm-manager
 
-go 1.20
+go 1.23
 
 replace (
+	github.com/Tencent/bk-bcs/bcs-common => ../../bcs-common
 	// github.com/databus23/helm-diff/v3 limit by go 1.20
 	github.com/databus23/helm-diff/v3 => github.com/databus23/helm-diff/v3 v3.8.1
 	helm.sh/helm/v3 => github.com/adevjoe/helm/v3 v3.12.1-tx.5
