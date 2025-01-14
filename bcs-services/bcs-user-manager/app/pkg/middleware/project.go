@@ -14,7 +14,9 @@ package middleware
 
 import (
 	"fmt"
+	"strings"
 
+	pkgheader "github.com/Tencent/bk-bcs/bcs-common/pkg/header"
 	"github.com/emicklei/go-restful"
 
 	"github.com/Tencent/bk-bcs/bcs-services/bcs-user-manager/app/pkg/component"
@@ -38,4 +40,16 @@ func ProjectFilter(request *restful.Request, response *restful.Response, chain *
 	}
 	request.SetAttribute(constant.ProjectAttr, project)
 	chain.ProcessFilter(request, response)
+}
+
+// GetLaneID 获取X-Lane- 报文头
+func GetLaneID(request *restful.Request) (string, string) {
+	header := request.Request.Header
+	for k := range header {
+		if strings.HasPrefix(k, pkgheader.LaneIDPrefix) {
+			return k, header.Get(k)
+		}
+	}
+
+	return "", ""
 }

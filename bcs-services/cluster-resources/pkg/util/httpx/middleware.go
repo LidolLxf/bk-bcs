@@ -103,7 +103,7 @@ func ParseProjectIDMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-
+		// 待改动
 		pj, err := projectClient.GetProjectInfo(r.Context(), projectCode)
 		if err != nil {
 			msg := fmt.Errorf("ParseProjectID get projectID error, projectCode: %s, err: %s", projectCode, err.Error())
