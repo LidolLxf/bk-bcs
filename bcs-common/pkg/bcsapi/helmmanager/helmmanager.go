@@ -14,6 +14,7 @@
 package helmmanager
 
 import (
+	"crypto/tls"
 	"fmt"
 	"math/rand"
 	"time"
@@ -21,13 +22,66 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
-	blog "k8s.io/klog/v2"
+	"k8s.io/klog/v2"
 
 	"github.com/Tencent/bk-bcs/bcs-common/pkg/bcsapi"
+	"github.com/Tencent/bk-bcs/bcs-common/pkg/discovery"
+	"github.com/Tencent/bk-bcs/bcs-common/pkg/header"
+	headerpkg "github.com/Tencent/bk-bcs/bcs-common/pkg/header"
 )
 
-// NewHelmClient create HelmManager SDK implementation
-func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
+var (
+	clientConfig *bcsapi.ClientConfig
+)
+
+// SetClientConfig set helm manager client config
+// disc nil 表示使用k8s 内置的service 进行服务访问
+func SetClientConfig(tlsConfig *tls.Config, disc *discovery.ModuleDiscovery) {
+	clientConfig = &bcsapi.ClientConfig{
+		TLSConfig: tlsConfig,
+		Discovery: disc,
+	}
+}
+
+// GetClient get cm client by discovery
+func GetClient(innerClientName string) (*HelmClientWrapper, func(), error) {
+	if clientConfig == nil {
+		return nil, nil, bcsapi.ErrNotInited
+	}
+	var addr string
+	if discovery.UseServiceDiscovery() {
+		addr = fmt.Sprintf("%s:%d", discovery.HelmManagerServiceName, discovery.ServiceGrpcPort)
+	} else {
+		if clientConfig.Discovery == nil {
+			return nil, nil, fmt.Errorf("cluster manager module not enable dsicovery")
+		}
+
+		nodeServer, err := clientConfig.Discovery.GetRandomServiceNode()
+		if err != nil {
+			return nil, nil, err
+		}
+		addr = nodeServer.Address
+	}
+	klog.Infof("get helm client with address: %s", addr)
+	klog.Infof("get cluster manager client with address: %s", addr)
+	conf := &bcsapi.Config{
+		Hosts:           []string{addr},
+		TLSConfig:       clientConfig.TLSConfig,
+		InnerClientName: innerClientName,
+	}
+	cli, closeCon := NewHelmClientWrapper(conf)
+
+	return cli, closeCon, nil
+}
+
+// HelmClientWrapper helm manager client wrapper
+type HelmClientWrapper struct {
+	HelmManagerClient   HelmManagerClient
+	ClusterAddonsClient ClusterAddonsClient
+}
+
+// NewHelmClientWrapper create HelmManager SDK implementation
+func NewHelmClientWrapper(config *bcsapi.Config) (*HelmClientWrapper, func()) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint
 	if len(config.Hosts) == 0 {
 		// ! pay more attention for nil return
@@ -35,8 +89,9 @@ func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
 	}
 	// create grpc connection
 	header := map[string]string{
-		"x-content-type": "application/grpc+proto",
-		"Content-Type":   "application/grpc",
+		"x-content-type":               "application/grpcproto",
+		"Content-Type":                 "application/grpc",
+		headerpkg.InnerClientHeaderKey: config.InnerClientName,
 	}
 	if len(config.AuthToken) != 0 {
 		header["Authorization"] = fmt.Sprintf("Bearer %s", config.AuthToken)
@@ -58,6 +113,7 @@ func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
 	if config.AuthToken != "" {
 		opts = append(opts, grpc.WithPerRPCCredentials(bcsapi.NewTokenAuth(config.AuthToken)))
 	}
+	opts = append(opts, grpc.WithUnaryInterceptor(headerpkg.LaneHeaderInterceptor()))
 
 	var conn *grpc.ClientConn
 	var err error
@@ -67,7 +123,7 @@ func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
 		addr := config.Hosts[selected]
 		conn, err = grpc.Dial(addr, opts...)
 		if err != nil {
-			blog.Errorf("Create helm manager grpc client with %s error: %s", addr, err.Error())
+			klog.Errorf("Create helm manager grpc client with %s error: %s", addr, err.Error())
 			continue
 		}
 		if conn != nil {
@@ -75,10 +131,13 @@ func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
 		}
 	}
 	if conn == nil {
-		blog.Errorf("create no helm manager client after all instance tries")
+		klog.Errorf("create no helm manager client after all instance tries")
 		return nil, nil
 	}
-	return NewHelmManagerClient(conn), func() { _ = conn.Close() }
+	return &HelmClientWrapper{
+		HelmManagerClient:   NewHelmManagerClient(conn),
+		ClusterAddonsClient: NewClusterAddonsClient(conn),
+	}, func() { _ = conn.Close() }
 }
 
 // NewHelmAddonsClient create HelmManager addons SDK implementation
@@ -90,7 +149,7 @@ func NewHelmAddonsClient(config *bcsapi.Config) (ClusterAddonsClient, func()) {
 	}
 	// create grpc connection
 	header := map[string]string{
-		"x-content-type": "application/grpc+proto",
+		"x-content-type": "application/grpcproto",
 		"Content-Type":   "application/grpc",
 	}
 	if len(config.AuthToken) != 0 {
@@ -113,6 +172,7 @@ func NewHelmAddonsClient(config *bcsapi.Config) (ClusterAddonsClient, func()) {
 	if config.AuthToken != "" {
 		opts = append(opts, grpc.WithPerRPCCredentials(bcsapi.NewTokenAuth(config.AuthToken)))
 	}
+	opts = append(opts, grpc.WithUnaryInterceptor(headerpkg.LaneHeaderInterceptor()))
 
 	var conn *grpc.ClientConn
 	var err error
@@ -122,7 +182,7 @@ func NewHelmAddonsClient(config *bcsapi.Config) (ClusterAddonsClient, func()) {
 		addr := config.Hosts[selected]
 		conn, err = grpc.Dial(addr, opts...)
 		if err != nil {
-			blog.Errorf("Create helm manager grpc client with %s error: %s", addr, err.Error())
+			klog.Errorf("Create helm manager grpc client with %s error: %s", addr, err.Error())
 			continue
 		}
 		if conn != nil {
@@ -130,8 +190,65 @@ func NewHelmAddonsClient(config *bcsapi.Config) (ClusterAddonsClient, func()) {
 		}
 	}
 	if conn == nil {
-		blog.Errorf("create no helm manager client after all instance tries")
+		klog.Errorf("create no helm manager client after all instance tries")
 		return nil, nil
 	}
 	return NewClusterAddonsClient(conn), func() { _ = conn.Close() }
+}
+
+// NewHelmClient create HelmManager SDK implementation
+func NewHelmClient(config *bcsapi.Config) (HelmManagerClient, func()) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint
+	if len(config.Hosts) == 0 {
+		// ! pay more attention for nil return
+		return nil, nil
+	}
+	// create grpc connection
+	header := map[string]string{
+		"x-content-type":            "application/grpcproto",
+		"Content-Type":              "application/grpc",
+		header.InnerClientHeaderKey: config.InnerClientName,
+	}
+	if len(config.AuthToken) != 0 {
+		header["Authorization"] = fmt.Sprintf("Bearer %s", config.AuthToken)
+	}
+	for k, v := range config.Header {
+		header[k] = v
+	}
+	md := metadata.New(header)
+	auth := &bcsapi.Authentication{InnerClientName: config.InnerClientName}
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.Header(&md)))
+	if config.TLSConfig != nil {
+		opts = append(opts, grpc.WithTransportCredentials(credentials.NewTLS(config.TLSConfig)))
+	} else {
+		opts = append(opts, grpc.WithInsecure()) // nolint
+		auth.Insecure = true
+	}
+	opts = append(opts, grpc.WithPerRPCCredentials(auth))
+	if config.AuthToken != "" {
+		opts = append(opts, grpc.WithPerRPCCredentials(bcsapi.NewTokenAuth(config.AuthToken)))
+	}
+	opts = append(opts, grpc.WithUnaryInterceptor(headerpkg.LaneHeaderInterceptor()))
+
+	var conn *grpc.ClientConn
+	var err error
+	maxTries := 3
+	for i := 0; i < maxTries; i++ {
+		selected := r.Intn(1024) % len(config.Hosts)
+		addr := config.Hosts[selected]
+		conn, err = grpc.Dial(addr, opts...)
+		if err != nil {
+			klog.Errorf("Create helm manager grpc client with %s error: %s", addr, err.Error())
+			continue
+		}
+		if conn != nil {
+			break
+		}
+	}
+	if conn == nil {
+		klog.Errorf("create no helm manager client after all instance tries")
+		return nil, nil
+	}
+	return NewHelmManagerClient(conn), func() { _ = conn.Close() }
 }
