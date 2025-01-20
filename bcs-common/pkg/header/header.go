@@ -149,6 +149,16 @@ func grpcLaneIDValue(ctx context.Context) map[string]string {
 	return nil
 }
 
+// GetLaneIDByHeader get lane id by header
+func GetLaneIDByHeader(h http.Header) (string, string) {
+	for k, v := range h {
+		if strings.HasPrefix(k, LaneIDPrefix) && len(v) > 0 {
+			return k, v[0]
+		}
+	}
+	return "", ""
+}
+
 // WithLaneIdCtx ctx lane id
 func WithLaneIdCtx(ctx context.Context, h http.Header) context.Context {
 	for k, v := range h {
