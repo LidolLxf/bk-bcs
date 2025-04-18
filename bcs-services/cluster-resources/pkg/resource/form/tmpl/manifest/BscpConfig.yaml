@@ -1,0 +1,26 @@
+apiVersion: {{ .metadata.apiVersion }}
+kind: BscpConfig
+{{ include "common.metadata" .metadata }}
+spec:
+  provider: 
+  {{- include "common.kvBscpConfigMap" .spec.provider | indent 4 }}
+  {{- if and .spec.provider (gt (len .spec.provider) 0) }}
+  configSyncer:
+    {{- range .spec.configSyncer }}
+    {{- if eq .resourceType "configmapName" }}
+    - configmapName: {{ .configmapName }}
+      matchConfigs: {{ .matchConfigs }}
+    {{- end }}
+    {{- if eq .resourceType "secretName" }}
+    - secretName: {{ .secretName }}
+      type: {{ .secretType }}
+    {{- end }}
+    {{- if and .resourceData.configData (gt (len .resourceData.configData) 0) }}
+      data: {{- range .resourceData.configData }}
+        - key: {{ .key }}
+          refConfig: {{ .refConfig }}
+      {{- end }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+

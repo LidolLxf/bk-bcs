@@ -432,6 +432,34 @@
   en: "SubPath In Volume"
 - msgID: 基本信息
   en: Metadata
+- msgID: configSyncer
+  en: configSyncer
+- msgID: provider
+  en: provider
+- msgID: feedAddr
+  en: feedAddr
+- msgID: feed 地址
+  en: feed address
+- msgID: 业务
+  en: biz
+- msgID: 客户端管理的token
+  en: token managed by client
+- msgID: bscp app的名称
+  en: name of bscp app
+- msgID: 支持linux wilecard语法
+  en: support Linux wilecard syntax
+- msgID: biz
+  en: biz
+- msgID: token
+  en: token
+- msgID: app
+  en: app
+- msgID: configmapName
+  en: configmapName
+- msgID: secretName
+  en: secretName
+- msgID: matchConfigs
+  en: matchConfigs
 - msgID: 标签
   en: Labels
 - msgID: 注解

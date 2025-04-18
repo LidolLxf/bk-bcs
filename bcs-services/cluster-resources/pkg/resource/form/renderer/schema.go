@@ -56,6 +56,10 @@ func NewSchemaRenderer(ctx context.Context, clusterID, apiVersion, kind, namespa
 	if namespace == "" {
 		namespace = "default"
 	}
+	// 临时测试修改
+	if kind == "ConfigMap" {
+		kind = "BscpConfig"
+	}
 	// 避免名称重复，每次默认添加随机后缀
 	randSuffix := stringx.Rand(RandomSuffixLength, SuffixCharset)
 	resName := fmt.Sprintf("%s-%s", strings.ToLower(kind), randSuffix)

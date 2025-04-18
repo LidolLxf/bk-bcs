@@ -64,6 +64,9 @@ func NewManifestRenderer(
 
 // Render 渲染表单数据，返回 Manifest
 func (r *ManifestRenderer) Render() (map[string]interface{}, error) {
+	if r.kind == resCsts.CM {
+		r.kind = resCsts.BscpConfig
+	}
 	for _, f := range []func() error{
 		// 1. 获取资源对应版本
 		r.setVersionAndKind,

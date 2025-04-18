@@ -1,0 +1,21 @@
+{{ include "common.metadata" . }}
+- - group:
+      - - group:
+            - [ "feedAddr", "biz" ]
+            - [ "token","app" ]
+          prop: provider
+          container:         
+            grid-template-columns: "1fr 1fr" 
+      - - group:
+            - [ "resourceType"]
+            - [ "configmapName","matchConfigs"]
+            - [ "secretName", "secretType"]
+            - - group:
+                  - - group:
+                        - [ "key","refConfig"]
+                      container:
+                        grid-template-columns: "1fr 1fr"
+                      prop: configData
+                prop: resourceData
+          prop: configSyncer
+    prop: spec

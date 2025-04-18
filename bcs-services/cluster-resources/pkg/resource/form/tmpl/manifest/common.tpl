@@ -42,3 +42,9 @@ metadata:
 []
 {{- end }}
 {{- end }}
+
+{{- define "common.kvBscpConfigMap" -}}
+{{- range $k, $v := . }}
+{{ $k | quote }}: {{ $v | quote }}
+{{- end }}
+{{- end }}
