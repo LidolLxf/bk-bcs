@@ -64,12 +64,13 @@ type patcher struct {
 
 // Run implements the post-render Run method, do the render
 func (p *patcher) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer, error) {
-	manifest, err := p.do(renderedManifests)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	// manifest, err := p.do(renderedManifests)
+	// if err != nil {
+	// 	return nil, err
+	// }
 	// 注入指定的值
-	splitManifests := stringx.SplitManifests(manifest.String())
+	splitManifests := stringx.SplitManifests(renderedManifests.String())
 	if err != nil {
 		return nil, fmt.Errorf("SplitYAML error, %s", err.Error())
 	}

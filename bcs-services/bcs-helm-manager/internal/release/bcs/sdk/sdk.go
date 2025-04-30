@@ -37,6 +37,7 @@ import (
 	"helm.sh/helm/v3/pkg/strvals"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/rest"
 
 	"github.com/Tencent/bk-bcs/bcs-services/bcs-helm-manager/internal/common"
 	projectClient "github.com/Tencent/bk-bcs/bcs-services/bcs-helm-manager/internal/component/project"
@@ -394,6 +395,14 @@ func (c *client) getConfigFlag(namespace string) *genericclioptions.ConfigFlags 
 	flags.Insecure = c.cf.Insecure
 	flags.Namespace = common.GetStringP(namespace)
 	flags.Timeout = common.GetStringP(defaultTimeout)
+	flags.WrapConfigFn = func(config *rest.Config) *rest.Config {
+		config.Host = *flags.APIServer
+		config.BearerToken = *flags.BearerToken
+		config.TLSClientConfig = rest.TLSClientConfig{
+			Insecure: true,
+		}
+		return config
+	}
 	return flags
 }
 

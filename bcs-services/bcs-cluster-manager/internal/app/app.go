@@ -1145,15 +1145,15 @@ func (cm *ClusterManager) Init() error {
 		return err
 	}
 
-	// init jwt client
-	if err := cm.initJWTClient(); err != nil {
-		return err
-	}
+	// // init jwt client
+	// if err := cm.initJWTClient(); err != nil {
+	// 	return err
+	// }
 
-	// init client permissions
-	if err := cm.initClientPermissions(); err != nil {
-		return err
-	}
+	// // init client permissions
+	// if err := cm.initClientPermissions(); err != nil {
+	// 	return err
+	// }
 
 	// init no auth methods
 	if err := cm.initNoAuthMethod(); err != nil {

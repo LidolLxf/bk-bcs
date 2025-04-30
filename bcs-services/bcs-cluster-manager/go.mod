@@ -1,6 +1,8 @@
 module github.com/Tencent/bk-bcs/bcs-services/bcs-cluster-manager
 
-go 1.20
+go 1.21
+
+toolchain go1.23.0
 
 replace (
 	github.com/Tencent/bk-bcs/bcs-common => ../../bcs-common
