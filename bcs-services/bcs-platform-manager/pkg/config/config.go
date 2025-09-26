@@ -19,11 +19,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const (
-	// APIServicePrefix API 服务前缀
-	APIServicePrefix = "/api"
-)
-
 // Configuration 配置
 type Configuration struct {
 	Viper       *viper.Viper
