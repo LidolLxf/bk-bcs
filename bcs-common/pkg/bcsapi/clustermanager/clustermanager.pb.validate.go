@@ -8107,7 +8107,7 @@ func (m *ListCloudVPCRequest) validate(all bool) error {
 	if _, ok := _ListCloudVPCRequest_NetworkType_InLookup[m.GetNetworkType()]; !ok {
 		err := ListCloudVPCRequestValidationError{
 			field:  "NetworkType",
-			reason: "value must be in list [overlay underlay]",
+			reason: "value must be in list [ overlay underlay]",
 		}
 		if !all {
 			return err
@@ -8116,6 +8116,30 @@ func (m *ListCloudVPCRequest) validate(all bool) error {
 	}
 
 	// no validation rules for BusinessID
+
+	// no validation rules for VpcName
+
+	if m.GetOffset() < 0 {
+		err := ListCloudVPCRequestValidationError{
+			field:  "Offset",
+			reason: "value must be greater than or equal to 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetLimit() > 5000 {
+		err := ListCloudVPCRequestValidationError{
+			field:  "Limit",
+			reason: "value must be less than or equal to 5000",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
 
 	if len(errors) > 0 {
 		return ListCloudVPCRequestMultiError(errors)
@@ -8198,6 +8222,7 @@ var _ interface {
 } = ListCloudVPCRequestValidationError{}
 
 var _ListCloudVPCRequest_NetworkType_InLookup = map[string]struct{}{
+	"":         {},
 	"overlay":  {},
 	"underlay": {},
 }
@@ -8263,6 +8288,8 @@ func (m *ListCloudVPCResponse) validate(all bool) error {
 		}
 
 	}
+
+	// no validation rules for Total
 
 	if len(errors) > 0 {
 		return ListCloudVPCResponseMultiError(errors)
@@ -8445,6 +8472,8 @@ func (m *CloudVPCResp) validate(all bool) error {
 	}
 
 	// no validation rules for BusinessID
+
+	// no validation rules for CreateTime
 
 	if len(errors) > 0 {
 		return CloudVPCRespMultiError(errors)

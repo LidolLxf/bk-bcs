@@ -62,12 +62,22 @@ func (la *ListAction) listCloudVPC() error { // nolint
 	if len(la.req.NetworkType) != 0 {
 		condM["networktype"] = la.req.NetworkType
 	}
+	if len(la.req.VpcName) != 0 {
+		condM["vpcname"] = operator.M{
+			"$regex": la.req.VpcName,
+		}
+	}
 
 	cond := operator.NewLeafCondition(operator.Eq, condM)
-	cloudVPCs, err := la.model.ListCloudVPC(la.ctx, cond, &storeopt.ListOption{})
+	count, cloudVPCs, err := la.model.ListCloudVPC(la.ctx, cond, &storeopt.ListOption{
+		Offset: int64(la.req.Offset),
+		Limit:  int64(la.req.Limit),
+	})
 	if err != nil {
 		return err
 	}
+
+	la.resp.Total = uint32(count)
 
 	var (
 		barrier = utils.NewRoutinePool(5)
@@ -132,9 +142,11 @@ func (la *ListAction) listCloudVPC() error { // nolint
 				Overlay: &cmproto.CidrDetailInfo{
 					ReservedIPNum:  vpc.ReservedIPNum,
 					AvailableIPNum: overlaySurPlusIPNum,
+					Cidrs:          vpc.Overlay.Cidrs,
 				},
 				Underlay: &cmproto.CidrDetailInfo{
 					AvailableIPNum: unerlaySurPlusIPNum,
+					Cidrs:          vpc.Underlay.Cidrs,
 				},
 			}
 			lock.Lock()
@@ -240,7 +252,7 @@ func (la *ListRegionAction) listCloudRegions() error {
 	condM["cloudid"] = la.req.CloudID
 
 	cond := operator.NewLeafCondition(operator.Eq, condM)
-	cloudVPCs, err := la.model.ListCloudVPC(la.ctx, cond, &storeopt.ListOption{})
+	_, cloudVPCs, err := la.model.ListCloudVPC(la.ctx, cond, &storeopt.ListOption{})
 	if err != nil {
 		return err
 	}

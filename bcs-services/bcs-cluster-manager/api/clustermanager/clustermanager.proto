@@ -3260,11 +3260,29 @@ message ListCloudVPCRequest {
   string networkType = 4[(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
     title: "networkType",
     description: "networkType网络类型(overlay/underlay)"
-  }, (validate.rules).string = {in: ["overlay", "underlay"]}];
+  }, (validate.rules).string = {in: ["","overlay", "underlay"]}];
   string businessID = 5[(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
     title: "businessID",
     description: "业务ID, 过滤业务私有的vpc"
   }];
+  string vpcName = 6[(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+    title: "vpcName",
+    description: "vpc名称"
+  }];
+  uint32 offset = 7 [
+    (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+      title : "offset",
+      description : "查询偏移量"
+    },
+    (validate.rules).uint32.gte = 0
+  ];
+  uint32 limit = 8 [
+    (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+      title : "limit",
+      description : "查询限制数量"
+    },
+    (validate.rules).uint32.lte = 5000
+  ];
 }
 
 message ListCloudVPCResponse {
@@ -3291,6 +3309,11 @@ message ListCloudVPCResponse {
   repeated CloudVPCResp data = 4 [(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
     title : "data",
     description : "获取到的信息"
+  }];
+  uint32 total = 5 [
+    (grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+      title : "total",
+      description : "总数"
   }];
 }
 
@@ -3347,6 +3370,10 @@ message CloudVPCResp {
   string businessID = 13[(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
     title: "businessID",
     description: "业务ID, 作用预留私有的业务vpc"
+  }];
+  string createTime = 14[(grpc.gateway.protoc_gen_swagger.options.openapiv2_field) = {
+    title: "createTime",
+    description: "创建时间"
   }];
 }
 

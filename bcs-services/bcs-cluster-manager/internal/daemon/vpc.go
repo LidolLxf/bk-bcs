@@ -92,7 +92,7 @@ func getIpUsageByCluster(model store.ClusterManagerModel, ipType string, cluster
 
 func (d *Daemon) reportVpcIpResourceUsage(error chan<- error) {
 	cond := operator.NewLeafCondition(operator.Eq, operator.M{"available": "true"})
-	cloudVPCs, err := d.model.ListCloudVPC(d.ctx, cond, &storeopt.ListOption{})
+	_, cloudVPCs, err := d.model.ListCloudVPC(d.ctx, cond, &storeopt.ListOption{})
 	if err != nil {
 		error <- err
 		return

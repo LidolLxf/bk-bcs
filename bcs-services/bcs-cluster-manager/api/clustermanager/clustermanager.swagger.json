@@ -2815,6 +2815,29 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "vpcName",
+            "description": "vpcName. vpc名称",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "offset",
+            "description": "offset. 查询偏移量",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "limit",
+            "description": "limit. 查询限制数量",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -9731,6 +9754,11 @@
           "type": "string",
           "description": "业务ID, 作用预留私有的业务vpc",
           "title": "businessID"
+        },
+        "createTime": {
+          "type": "string",
+          "description": "创建时间",
+          "title": "createTime"
         }
       },
       "title": "CloudVPCResp for web model"
@@ -16620,6 +16648,12 @@
           },
           "description": "获取到的信息",
           "title": "data"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64",
+          "description": "总数",
+          "title": "total"
         }
       },
       "description": "查询云VPC返回",

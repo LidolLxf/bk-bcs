@@ -150,7 +150,7 @@ func (m *ModelCloudVPC) GetCloudVPC(ctx context.Context, cloudID, vpcID string) 
 
 // ListCloudVPC list cloudVPC
 func (m *ModelCloudVPC) ListCloudVPC(ctx context.Context, vpc *operator.Condition, opt *options.ListOption) (
-	[]*types.CloudVPC, error) {
+	int64, []*types.CloudVPC, error) {
 	cloudVPCList := make([]*types.CloudVPC, 0)
 	finder := m.db.Table(m.tableName).Find(vpc)
 	if len(opt.Sort) != 0 {
@@ -164,9 +164,14 @@ func (m *ModelCloudVPC) ListCloudVPC(ctx context.Context, vpc *operator.Conditio
 	} else {
 		finder = finder.WithLimit(opt.Limit)
 	}
-	if err := finder.All(ctx, &cloudVPCList); err != nil {
-		return nil, err
+	count, err := finder.Count(ctx)
+	if err != nil {
+		return 0, nil, err
 	}
 
-	return cloudVPCList, nil
+	if err := finder.All(ctx, &cloudVPCList); err != nil {
+		return 0, nil, err
+	}
+
+	return count, cloudVPCList, nil
 }

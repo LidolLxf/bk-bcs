@@ -130,7 +130,7 @@ type ClusterManagerModel interface {
 	CreateCloudVPC(ctx context.Context, vpc *types.CloudVPC) error
 	UpdateCloudVPC(ctx context.Context, vpc *types.CloudVPC) error
 	DeleteCloudVPC(ctx context.Context, cloudID string, vpcID string) error
-	ListCloudVPC(ctx context.Context, cond *operator.Condition, opt *options.ListOption) ([]*types.CloudVPC, error)
+	ListCloudVPC(ctx context.Context, cond *operator.Condition, opt *options.ListOption) (int64, []*types.CloudVPC, error)
 	GetCloudVPC(ctx context.Context, cloudID, vpcID string) (*types.CloudVPC, error)
 
 	// cloud account info storage manager
