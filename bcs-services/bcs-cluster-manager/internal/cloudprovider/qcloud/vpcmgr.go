@@ -116,6 +116,21 @@ func (c *VPCManager) ListSubnets(vpcID, zone string, opt *cloudprovider.ListNetw
 	return result, nil
 }
 
+// CreateSubnets create vpc subnets
+func (c *VPCManager) CreateSubnets(opt *cloudprovider.NetworksSubnetOption) (*proto.Subnet, error) {
+	return nil, cloudprovider.ErrCloudNotImplemented
+}
+
+// UpdateSubnets update vpc subnets
+func (c *VPCManager) UpdateSubnets(opt *cloudprovider.NetworksSubnetOption) error {
+	return cloudprovider.ErrCloudNotImplemented
+}
+
+// DeleteSubnets delete vpc subnets
+func (c *VPCManager) DeleteSubnets(opt *cloudprovider.NetworksSubnetOption) error {
+	return cloudprovider.ErrCloudNotImplemented
+}
+
 // ListSecurityGroups list security groups
 func (c *VPCManager) ListSecurityGroups(opt *cloudprovider.ListNetworksOption) ([]*proto.SecurityGroup, error) {
 	vpcCli, err := api.NewVPCClient(&opt.CommonOption)
@@ -276,4 +291,102 @@ func (c *VPCManager) GetClusterIpUsage(clusterId string, ipType string, opt *clo
 	}
 
 	return 0, 0, fmt.Errorf("not supported ipType[%s]", ipType)
+}
+
+// ListVpcsByPage list vpcs by page
+func (c *VPCManager) ListVpcsByPage(opt *cloudprovider.ListNetworksOption) (int64, []*proto.CloudVpcs, error) {
+	if opt == nil {
+		return 0, nil, fmt.Errorf("opt is nil")
+	}
+	vpcCli, err := api.NewVPCClient(&opt.CommonOption)
+	if err != nil {
+		blog.Errorf("create VPC client when failed: %v", err)
+		return 0, nil, err
+	}
+
+	filter := make([]*api.Filter, 0)
+	if len(opt.VpcIds) > 0 {
+		filter = append(filter, &api.Filter{Name: "vpc-id", Values: opt.VpcIds})
+	}
+
+	if len(opt.VpcName) > 0 {
+		filter = append(filter, &api.Filter{Name: "vpc-name", Values: opt.VpcName})
+	}
+
+	vpcs, err := vpcCli.DescribeVpcsByPage(nil, filter, opt.Offset, opt.Limit)
+	if err != nil {
+		return 0, nil, err
+	}
+	result := make([]*proto.CloudVpcs, 0)
+	for _, v := range vpcs.VpcSet {
+		availableOverlayIpsNum, totalOverlayIpNum, availableOverlayCidr, err :=
+			getIpNumsAndCidr(&opt.CommonOption, utils.StringPtrToString(v.VpcId), *v.CidrBlock, 1)
+		if err != nil {
+			return 0, nil, err
+		}
+		availableUnderlayIpNum, totalUnderlayIpNum, availableUnderlayCidr, err :=
+			getIpNumsAndCidr(&opt.CommonOption, utils.StringPtrToString(v.VpcId), *v.CidrBlock, 0)
+		if err != nil {
+			return 0, nil, err
+		}
+		result = append(result, &proto.CloudVpcs{
+			VpcName:                utils.StringPtrToString(v.VpcName),
+			VpcID:                  utils.StringPtrToString(v.VpcId),
+			Region:                 opt.Region,
+			AvailableOverlayIpNum:  availableOverlayIpsNum,
+			AvailableOverlayCidr:   availableOverlayCidr,
+			TotalOverlayIpNum:      totalOverlayIpNum,
+			AvailableUnderlayIpNum: availableUnderlayIpNum,
+			AvailableUnderlayCidr:  availableUnderlayCidr,
+			TotalUnderlayIpNum:     totalUnderlayIpNum,
+			CreateTime:             utils.StringPtrToString(v.CreatedTime),
+		})
+	}
+	return utils.Uint64PtrToInt64(vpcs.TotalCount), result, nil
+}
+
+// 获取overlay/underlay ip可使用数量, 总量及cidr
+func getIpNumsAndCidr(
+	opt *cloudprovider.CommonOption, vpcId, cidrBlock string, assistantType int) (uint32, uint32, []string, error) {
+	var availableIpsNums, totalIpsNums uint32
+	var cidrs []string
+	switch assistantType {
+	case 0:
+		freeIPNets, err := business.GetFreeIPNets(opt, vpcId)
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		for _, v := range freeIPNets {
+			cidrs = append(cidrs, v.String())
+		}
+		subnets, err := business.GetAllocatedSubnetsInfoByVpc(opt, vpcId)
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		// 已使用ip数量
+		usedIp := uint32(subnets.TotalIpAddressCount) - uint32(subnets.AvailableIpAddressCount)
+		_, allIpNets, err := net.ParseCIDR(cidrBlock)
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		totalIpsNums, err = cidrtree.GetIPNetsNum([]*net.IPNet{allIpNets})
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		availableIpsNums = totalIpsNums - usedIp
+		return availableIpsNums, totalIpsNums, cidrs, nil
+	case 1:
+		freeIPNets, err := business.GetVpcCIDRAndIpNum(opt, vpcId, 1)
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		// for _, v := range freeIPNets.AllocatedSubnetsNets {
+		// 	cidrs = append(cidrs, v.String())
+		// }
+		availableIpsNums = uint32(freeIPNets.AvailableIpAddressCount)
+		totalIpsNums = uint32(freeIPNets.TotalIpAddressCount)
+		return availableIpsNums, totalIpsNums, cidrs, nil
+	default:
+		return 0, 0, nil, fmt.Errorf("assistantType[%d] not support", assistantType)
+	}
 }

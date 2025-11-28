@@ -82,6 +82,37 @@ func GetVpcCIDRBlocks(opt *cloudprovider.CommonOption, vpcId string, assistantTy
 
 }
 
+// GetVpcOverlayCIDRAndIpNum 获取vpc voerlay所属的cidr段及ip num
+func GetVpcOverlayCIDRAndIpNum(
+	opt *cloudprovider.CommonOption, vpcId string) (*cidrtree.VpcInfo, error) {
+	vpcCli, err := api.NewVPCClient(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	vpcSet, err := vpcCli.DescribeVpcs([]string{vpcId}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(vpcSet) == 0 {
+		return nil, fmt.Errorf("GetVpcCIDRBlocks DescribeVpcs[%s] empty", vpcId)
+	}
+
+	var vsi = &cidrtree.VpcInfo{}
+
+	for _, v := range vpcSet[0].AssistantCidrSet {
+		if v.AssistantType != nil && int(*v.AssistantType) == 1 && v.CidrBlock != nil {
+			for _, subnet := range v.SubnetSet {
+				vsi.AvailableIpAddressCount += utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount)
+				vsi.TotalIpAddressCount += utils.Uint64PtrToInt64(subnet.TotalIpAddressCount)
+			}
+		}
+	}
+
+	return vsi, nil
+
+}
+
 // GetAllocatedSubnetsByVpc 获取vpc已分配的子网cidr段
 func GetAllocatedSubnetsByVpc(opt *cloudprovider.CommonOption, vpcId string) ([]*net.IPNet, error) {
 	vpcCli, err := api.NewVPCClient(opt)
@@ -107,6 +138,28 @@ func GetAllocatedSubnetsByVpc(opt *cloudprovider.CommonOption, vpcId string) ([]
 		}
 	}
 	return ret, nil
+}
+
+// GetAllocatedSubnetsInfoByVpc 获取vpc已分配的子网ip数量信息
+func GetAllocatedSubnetsInfoByVpc(opt *cloudprovider.CommonOption, vpcId string) (*cidrtree.VpcInfo, error) {
+	vpcCli, err := api.NewVPCClient(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := make([]*api.Filter, 0)
+	filter = append(filter, &api.Filter{Name: "vpc-id", Values: []string{vpcId}})
+	subnets, err := vpcCli.DescribeSubnets(nil, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	vsi := &cidrtree.VpcInfo{}
+	for _, subnet := range subnets {
+		vsi.AvailableIpAddressCount += utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount)
+		vsi.TotalIpAddressCount += utils.Uint64PtrToInt64(subnet.TotalIpAddressCount)
+	}
+	return vsi, nil
 }
 
 // GetFreeIPNets return free subnets
@@ -606,6 +659,58 @@ func GetVpcGrFreeIPNets(opt *cloudprovider.CommonOption, cloudId, vpcId string,
 	}
 
 	return cidrtree.GetFreeIPNets(allBlocks, reservedBlocks, allSubnets), nil
+}
+
+// GetVpcGrFreeIPNetsAndNums get vpc cidr free cidrs
+func GetVpcGrFreeIPNetsAndNums(opt *cloudprovider.CommonOption, cloudId, vpcId string,
+	reservedBlocks []*net.IPNet) (*cidrtree.VpcInfo, error) {
+	allBlocks, err := cloudprovider.GetOverlayCidrBlocks(cloudId, vpcId)
+	if err != nil {
+		return nil, err
+	}
+	vpcInfo := &cidrtree.VpcInfo{}
+	// 获取总ip数
+	ipnum, err := cidrtree.GetIPNetsNum(allBlocks)
+	if err != nil {
+		return nil, err
+	}
+	vpcInfo.TotalIpAddressCount = int64(ipnum)
+	for _, block := range allBlocks {
+		vpcInfo.CidrBlock = append(vpcInfo.CidrBlock, block.String())
+	}
+	// vpcID中所有的容器辅助cidr网段
+	allSubnets, err := GetVpcCIDRBlocks(opt, vpcId, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	// 缓存gr cidr
+	cacheSubnets, err := getGrInCacheByVpc(vpcId)
+	if err != nil {
+		return nil, err
+	}
+
+	// 已使用cidr 和 缓存cidr 去重
+	subnetMap := make(map[string]*net.IPNet)
+	for _, subnet := range allSubnets {
+		subnetMap[subnet.String()] = subnet
+	}
+
+	// 将不重复的缓存子网添加到allSubnets
+	for _, subnet := range cacheSubnets {
+		if _, exists := subnetMap[subnet.String()]; !exists {
+			allSubnets = append(allSubnets, subnet)
+
+			subnetMap[subnet.String()] = subnet
+		}
+	}
+	// 获取可用网段
+	frees := cidrtree.GetFreeIPNets(allBlocks, reservedBlocks, allSubnets)
+	for _, free := range frees {
+		vpcInfo.AvailableCidrBlock = append(vpcInfo.AvailableCidrBlock, free.String())
+	}
+
+	return vpcInfo, nil
 }
 
 // getGrInCacheByVpc get cache gr cidr

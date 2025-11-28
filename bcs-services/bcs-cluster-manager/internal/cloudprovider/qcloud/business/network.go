@@ -236,6 +236,57 @@ func GetVpcCIDRBlocks(opt *cloudprovider.CommonOption, vpcId string, assistantTy
 
 }
 
+// GetVpcCIDRAndIpNum 获取vpc所属的cidr段及ip num(包括普通辅助cidr、容器辅助cidr)
+func GetVpcCIDRAndIpNum(
+	opt *cloudprovider.CommonOption, vpcId string, assistantType int) (*cidrtree.VpcInfo, error) {
+	vpcCli, err := api.NewVPCClient(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	vpcSet, err := vpcCli.DescribeVpcs([]string{vpcId}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(vpcSet) == 0 {
+		return nil, fmt.Errorf("GetVpcCIDRBlocks DescribeVpcs[%s] empty", vpcId)
+	}
+
+	cidrs := make([]string, 0)
+	if assistantType < 0 || assistantType == 0 {
+		cidrs = append(cidrs, *vpcSet[0].CidrBlock)
+	}
+
+	var vsi = &cidrtree.VpcInfo{}
+
+	for _, v := range vpcSet[0].AssistantCidrSet {
+		// 获取所有辅助cidr, 不区分是 普通辅助cidr/容器辅助cidr
+		if assistantType < 0 && v.AssistantType != nil && v.CidrBlock != nil {
+			cidrs = append(cidrs, *v.CidrBlock)
+			continue
+		}
+
+		if v.AssistantType != nil && int(*v.AssistantType) == assistantType && v.CidrBlock != nil {
+			cidrs = append(cidrs, *v.CidrBlock)
+			for _, subnet := range v.SubnetSet {
+				vsi.AvailableIpAddressCount += utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount)
+				vsi.TotalIpAddressCount += utils.Uint64PtrToInt64(subnet.TotalIpAddressCount)
+			}
+		}
+	}
+
+	var ret []*net.IPNet
+	for _, v := range cidrs {
+		_, c, err := net.ParseCIDR(v)
+		if err != nil {
+			return vsi, err
+		}
+		ret = append(ret, c)
+	}
+	return vsi, nil
+
+}
+
 // GetAllocatedSubnetsByVpc 获取vpc已分配的子网cidr段
 func GetAllocatedSubnetsByVpc(opt *cloudprovider.CommonOption, vpcId string) ([]*net.IPNet, error) {
 	vpcCli, err := api.NewVPCClient(opt)
@@ -261,6 +312,36 @@ func GetAllocatedSubnetsByVpc(opt *cloudprovider.CommonOption, vpcId string) ([]
 		}
 	}
 	return ret, nil
+}
+
+// GetAllocatedSubnetsInfoByVpc 获取vpc已分配的子网信息
+func GetAllocatedSubnetsInfoByVpc(opt *cloudprovider.CommonOption, vpcId string) (*cidrtree.VpcInfo, error) {
+	vpcCli, err := api.NewVPCClient(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	filter := make([]*api.Filter, 0)
+	filter = append(filter, &api.Filter{Name: "vpc-id", Values: []string{vpcId}})
+	subnets, err := vpcCli.DescribeSubnets(nil, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	vsi := &cidrtree.VpcInfo{}
+	var ret []*net.IPNet
+	for _, subnet := range subnets {
+		if subnet.CidrBlock != nil {
+			_, c, err := net.ParseCIDR(*subnet.CidrBlock)
+			if err != nil {
+				return vsi, err
+			}
+			ret = append(ret, c)
+		}
+		vsi.AvailableIpAddressCount += utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount)
+		vsi.TotalIpAddressCount += utils.Uint64PtrToInt64(subnet.TotalIpAddressCount)
+	}
+	return vsi, nil
 }
 
 // GetFreeIPNets return free subnets

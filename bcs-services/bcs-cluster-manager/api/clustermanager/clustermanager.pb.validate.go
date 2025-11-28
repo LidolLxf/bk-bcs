@@ -52776,6 +52776,410 @@ var _ interface {
 	ErrorName() string
 } = ListCloudVpcsResponseValidationError{}
 
+// Validate checks the field values on ListCloudVpcsPageRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListCloudVpcsPageRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListCloudVpcsPageRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListCloudVpcsPageRequestMultiError, or nil if none found.
+func (m *ListCloudVpcsPageRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListCloudVpcsPageRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetCloudID()) < 2 {
+		err := ListCloudVpcsPageRequestValidationError{
+			field:  "CloudID",
+			reason: "value length must be at least 2 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Region
+
+	// no validation rules for AccountID
+
+	// no validation rules for VpcID
+
+	// no validation rules for ResourceGroupName
+
+	// no validation rules for VpcName
+
+	if m.GetOffset() < 0 {
+		err := ListCloudVpcsPageRequestValidationError{
+			field:  "Offset",
+			reason: "value must be greater than or equal to 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetLimit() > 5000 {
+		err := ListCloudVpcsPageRequestValidationError{
+			field:  "Limit",
+			reason: "value must be less than or equal to 5000",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		return ListCloudVpcsPageRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListCloudVpcsPageRequestMultiError is an error wrapping multiple validation
+// errors returned by ListCloudVpcsPageRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ListCloudVpcsPageRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListCloudVpcsPageRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListCloudVpcsPageRequestMultiError) AllErrors() []error { return m }
+
+// ListCloudVpcsPageRequestValidationError is the validation error returned by
+// ListCloudVpcsPageRequest.Validate if the designated constraints aren't met.
+type ListCloudVpcsPageRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListCloudVpcsPageRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListCloudVpcsPageRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListCloudVpcsPageRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListCloudVpcsPageRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListCloudVpcsPageRequestValidationError) ErrorName() string {
+	return "ListCloudVpcsPageRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListCloudVpcsPageRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListCloudVpcsPageRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListCloudVpcsPageRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListCloudVpcsPageRequestValidationError{}
+
+// Validate checks the field values on ListCloudVpcsPageResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListCloudVpcsPageResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListCloudVpcsPageResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListCloudVpcsPageResponseMultiError, or nil if none found.
+func (m *ListCloudVpcsPageResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListCloudVpcsPageResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	// no validation rules for Result
+
+	for idx, item := range m.GetData() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListCloudVpcsPageResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListCloudVpcsPageResponseValidationError{
+						field:  fmt.Sprintf("Data[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListCloudVpcsPageResponseValidationError{
+					field:  fmt.Sprintf("Data[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Total
+
+	if len(errors) > 0 {
+		return ListCloudVpcsPageResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListCloudVpcsPageResponseMultiError is an error wrapping multiple validation
+// errors returned by ListCloudVpcsPageResponse.ValidateAll() if the
+// designated constraints aren't met.
+type ListCloudVpcsPageResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListCloudVpcsPageResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListCloudVpcsPageResponseMultiError) AllErrors() []error { return m }
+
+// ListCloudVpcsPageResponseValidationError is the validation error returned by
+// ListCloudVpcsPageResponse.Validate if the designated constraints aren't met.
+type ListCloudVpcsPageResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListCloudVpcsPageResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListCloudVpcsPageResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListCloudVpcsPageResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListCloudVpcsPageResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListCloudVpcsPageResponseValidationError) ErrorName() string {
+	return "ListCloudVpcsPageResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListCloudVpcsPageResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListCloudVpcsPageResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListCloudVpcsPageResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListCloudVpcsPageResponseValidationError{}
+
+// Validate checks the field values on CloudVpcs with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CloudVpcs) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CloudVpcs with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CloudVpcsMultiError, or nil
+// if none found.
+func (m *CloudVpcs) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CloudVpcs) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for VpcName
+
+	// no validation rules for VpcID
+
+	// no validation rules for Region
+
+	// no validation rules for AvailableOverlayIpNum
+
+	// no validation rules for TotalOverlayIpNum
+
+	// no validation rules for AvailableUnderlayIpNum
+
+	// no validation rules for TotalUnderlayIpNum
+
+	// no validation rules for CreateTime
+
+	if len(errors) > 0 {
+		return CloudVpcsMultiError(errors)
+	}
+
+	return nil
+}
+
+// CloudVpcsMultiError is an error wrapping multiple validation errors returned
+// by CloudVpcs.ValidateAll() if the designated constraints aren't met.
+type CloudVpcsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CloudVpcsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CloudVpcsMultiError) AllErrors() []error { return m }
+
+// CloudVpcsValidationError is the validation error returned by
+// CloudVpcs.Validate if the designated constraints aren't met.
+type CloudVpcsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CloudVpcsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CloudVpcsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CloudVpcsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CloudVpcsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CloudVpcsValidationError) ErrorName() string { return "CloudVpcsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CloudVpcsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCloudVpcs.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CloudVpcsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CloudVpcsValidationError{}
+
 // Validate checks the field values on CloudVpc with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -52841,6 +53245,8 @@ func (m *CloudVpc) validate(all bool) error {
 	}
 
 	// no validation rules for AllocateIpNum
+
+	// no validation rules for CreateTime
 
 	if len(errors) > 0 {
 		return CloudVpcMultiError(errors)
@@ -53294,6 +53700,764 @@ var _ interface {
 	ErrorName() string
 } = ListCloudSubnetsResponseValidationError{}
 
+// Validate checks the field values on CreateCloudSubnetsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateCloudSubnetsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateCloudSubnetsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateCloudSubnetsRequestMultiError, or nil if none found.
+func (m *CreateCloudSubnetsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateCloudSubnetsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetCloudID()) < 2 {
+		err := CreateCloudSubnetsRequestValidationError{
+			field:  "CloudID",
+			reason: "value length must be at least 2 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if l := utf8.RuneCountInString(m.GetVpcID()); l < 2 || l > 100 {
+		err := CreateCloudSubnetsRequestValidationError{
+			field:  "VpcID",
+			reason: "value length must be between 2 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !_CreateCloudSubnetsRequest_VpcID_Pattern.MatchString(m.GetVpcID()) {
+		err := CreateCloudSubnetsRequestValidationError{
+			field:  "VpcID",
+			reason: "value does not match regex pattern \"^[0-9a-zA-Z-]+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Region
+
+	// no validation rules for AccountID
+
+	// no validation rules for SubnetName
+
+	// no validation rules for CidrBlock
+
+	// no validation rules for Zone
+
+	if len(errors) > 0 {
+		return CreateCloudSubnetsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateCloudSubnetsRequestMultiError is an error wrapping multiple validation
+// errors returned by CreateCloudSubnetsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type CreateCloudSubnetsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateCloudSubnetsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateCloudSubnetsRequestMultiError) AllErrors() []error { return m }
+
+// CreateCloudSubnetsRequestValidationError is the validation error returned by
+// CreateCloudSubnetsRequest.Validate if the designated constraints aren't met.
+type CreateCloudSubnetsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateCloudSubnetsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateCloudSubnetsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateCloudSubnetsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateCloudSubnetsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateCloudSubnetsRequestValidationError) ErrorName() string {
+	return "CreateCloudSubnetsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateCloudSubnetsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateCloudSubnetsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateCloudSubnetsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateCloudSubnetsRequestValidationError{}
+
+var _CreateCloudSubnetsRequest_VpcID_Pattern = regexp.MustCompile("^[0-9a-zA-Z-]+$")
+
+// Validate checks the field values on CreateCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *CreateCloudSubnetsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CreateCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// CreateCloudSubnetsResponseMultiError, or nil if none found.
+func (m *CreateCloudSubnetsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CreateCloudSubnetsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	// no validation rules for Result
+
+	if all {
+		switch v := interface{}(m.GetData()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CreateCloudSubnetsResponseValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CreateCloudSubnetsResponseValidationError{
+					field:  "Data",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetData()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CreateCloudSubnetsResponseValidationError{
+				field:  "Data",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return CreateCloudSubnetsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// CreateCloudSubnetsResponseMultiError is an error wrapping multiple
+// validation errors returned by CreateCloudSubnetsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type CreateCloudSubnetsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CreateCloudSubnetsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CreateCloudSubnetsResponseMultiError) AllErrors() []error { return m }
+
+// CreateCloudSubnetsResponseValidationError is the validation error returned
+// by CreateCloudSubnetsResponse.Validate if the designated constraints aren't met.
+type CreateCloudSubnetsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CreateCloudSubnetsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CreateCloudSubnetsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CreateCloudSubnetsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CreateCloudSubnetsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CreateCloudSubnetsResponseValidationError) ErrorName() string {
+	return "CreateCloudSubnetsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e CreateCloudSubnetsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCreateCloudSubnetsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CreateCloudSubnetsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CreateCloudSubnetsResponseValidationError{}
+
+// Validate checks the field values on UpdateCloudSubnetsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateCloudSubnetsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateCloudSubnetsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateCloudSubnetsRequestMultiError, or nil if none found.
+func (m *UpdateCloudSubnetsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateCloudSubnetsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetCloudID()) < 2 {
+		err := UpdateCloudSubnetsRequestValidationError{
+			field:  "CloudID",
+			reason: "value length must be at least 2 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Region
+
+	// no validation rules for AccountID
+
+	if utf8.RuneCountInString(m.GetSubnetID()) < 1 {
+		err := UpdateCloudSubnetsRequestValidationError{
+			field:  "SubnetID",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for SubnetName
+
+	if len(errors) > 0 {
+		return UpdateCloudSubnetsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateCloudSubnetsRequestMultiError is an error wrapping multiple validation
+// errors returned by UpdateCloudSubnetsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type UpdateCloudSubnetsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateCloudSubnetsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateCloudSubnetsRequestMultiError) AllErrors() []error { return m }
+
+// UpdateCloudSubnetsRequestValidationError is the validation error returned by
+// UpdateCloudSubnetsRequest.Validate if the designated constraints aren't met.
+type UpdateCloudSubnetsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateCloudSubnetsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateCloudSubnetsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateCloudSubnetsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateCloudSubnetsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateCloudSubnetsRequestValidationError) ErrorName() string {
+	return "UpdateCloudSubnetsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateCloudSubnetsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateCloudSubnetsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateCloudSubnetsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateCloudSubnetsRequestValidationError{}
+
+// Validate checks the field values on UpdateCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *UpdateCloudSubnetsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on UpdateCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// UpdateCloudSubnetsResponseMultiError, or nil if none found.
+func (m *UpdateCloudSubnetsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *UpdateCloudSubnetsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	// no validation rules for Result
+
+	if len(errors) > 0 {
+		return UpdateCloudSubnetsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// UpdateCloudSubnetsResponseMultiError is an error wrapping multiple
+// validation errors returned by UpdateCloudSubnetsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type UpdateCloudSubnetsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m UpdateCloudSubnetsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m UpdateCloudSubnetsResponseMultiError) AllErrors() []error { return m }
+
+// UpdateCloudSubnetsResponseValidationError is the validation error returned
+// by UpdateCloudSubnetsResponse.Validate if the designated constraints aren't met.
+type UpdateCloudSubnetsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e UpdateCloudSubnetsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e UpdateCloudSubnetsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e UpdateCloudSubnetsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e UpdateCloudSubnetsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e UpdateCloudSubnetsResponseValidationError) ErrorName() string {
+	return "UpdateCloudSubnetsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e UpdateCloudSubnetsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sUpdateCloudSubnetsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = UpdateCloudSubnetsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = UpdateCloudSubnetsResponseValidationError{}
+
+// Validate checks the field values on DeleteCloudSubnetsRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteCloudSubnetsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteCloudSubnetsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteCloudSubnetsRequestMultiError, or nil if none found.
+func (m *DeleteCloudSubnetsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteCloudSubnetsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if utf8.RuneCountInString(m.GetCloudID()) < 2 {
+		err := DeleteCloudSubnetsRequestValidationError{
+			field:  "CloudID",
+			reason: "value length must be at least 2 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for AccountID
+
+	if utf8.RuneCountInString(m.GetSubnetID()) < 1 {
+		err := DeleteCloudSubnetsRequestValidationError{
+			field:  "SubnetID",
+			reason: "value length must be at least 1 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Region
+
+	if len(errors) > 0 {
+		return DeleteCloudSubnetsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteCloudSubnetsRequestMultiError is an error wrapping multiple validation
+// errors returned by DeleteCloudSubnetsRequest.ValidateAll() if the
+// designated constraints aren't met.
+type DeleteCloudSubnetsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteCloudSubnetsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteCloudSubnetsRequestMultiError) AllErrors() []error { return m }
+
+// DeleteCloudSubnetsRequestValidationError is the validation error returned by
+// DeleteCloudSubnetsRequest.Validate if the designated constraints aren't met.
+type DeleteCloudSubnetsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteCloudSubnetsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteCloudSubnetsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteCloudSubnetsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteCloudSubnetsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteCloudSubnetsRequestValidationError) ErrorName() string {
+	return "DeleteCloudSubnetsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteCloudSubnetsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteCloudSubnetsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteCloudSubnetsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteCloudSubnetsRequestValidationError{}
+
+// Validate checks the field values on DeleteCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *DeleteCloudSubnetsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on DeleteCloudSubnetsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// DeleteCloudSubnetsResponseMultiError, or nil if none found.
+func (m *DeleteCloudSubnetsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *DeleteCloudSubnetsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Code
+
+	// no validation rules for Message
+
+	// no validation rules for Result
+
+	if len(errors) > 0 {
+		return DeleteCloudSubnetsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// DeleteCloudSubnetsResponseMultiError is an error wrapping multiple
+// validation errors returned by DeleteCloudSubnetsResponse.ValidateAll() if
+// the designated constraints aren't met.
+type DeleteCloudSubnetsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m DeleteCloudSubnetsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m DeleteCloudSubnetsResponseMultiError) AllErrors() []error { return m }
+
+// DeleteCloudSubnetsResponseValidationError is the validation error returned
+// by DeleteCloudSubnetsResponse.Validate if the designated constraints aren't met.
+type DeleteCloudSubnetsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e DeleteCloudSubnetsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e DeleteCloudSubnetsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e DeleteCloudSubnetsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e DeleteCloudSubnetsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e DeleteCloudSubnetsResponseValidationError) ErrorName() string {
+	return "DeleteCloudSubnetsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e DeleteCloudSubnetsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sDeleteCloudSubnetsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = DeleteCloudSubnetsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = DeleteCloudSubnetsResponseValidationError{}
+
 // Validate checks the field values on Subnet with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -53361,6 +54525,8 @@ func (m *Subnet) validate(all bool) error {
 	}
 
 	// no validation rules for HwNeutronSubnetID
+
+	// no validation rules for TotalIpAddressCount
 
 	if len(errors) > 0 {
 		return SubnetMultiError(errors)

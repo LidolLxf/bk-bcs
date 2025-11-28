@@ -437,6 +437,15 @@ func Int64PtrToInt64(num *int64) int64 {
 	return *num
 }
 
+// Uint64PtrToInt64 ptrUint64 to int64
+func Uint64PtrToInt64(num *uint64) int64 {
+	if num == nil {
+		return 0
+	}
+
+	return int64(*num)
+}
+
 // MatchPatternSubnet inner match inner subnet,
 // if str == region, match node subnet; if str == region-clusterId, match cluster subnet
 func MatchPatternSubnet(subnetName, str string) bool {

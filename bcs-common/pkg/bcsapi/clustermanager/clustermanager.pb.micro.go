@@ -739,6 +739,12 @@ func NewClusterManagerEndpoints() []*api.Endpoint {
 			Handler: "rpc",
 		},
 		{
+			Name:    "ClusterManager.ListCloudVpcsPage",
+			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/page"},
+			Method:  []string{"GET"},
+			Handler: "rpc",
+		},
+		{
 			Name:    "ClusterManager.CheckCidrConflictFromVpc",
 			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/{vpcId}/cidrconflict"},
 			Method:  []string{"GET"},
@@ -748,6 +754,24 @@ func NewClusterManagerEndpoints() []*api.Endpoint {
 			Name:    "ClusterManager.ListCloudSubnets",
 			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets"},
 			Method:  []string{"GET"},
+			Handler: "rpc",
+		},
+		{
+			Name:    "ClusterManager.CreateCloudSubnets",
+			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/{vpcID}"},
+			Method:  []string{"POST"},
+			Handler: "rpc",
+		},
+		{
+			Name:    "ClusterManager.UpdateCloudSubnets",
+			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets/{subnetID}"},
+			Method:  []string{"PUT"},
+			Handler: "rpc",
+		},
+		{
+			Name:    "ClusterManager.DeleteCloudSubnets",
+			Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets/{subnetID}"},
+			Method:  []string{"DELETE"},
 			Handler: "rpc",
 		},
 		{
@@ -1138,8 +1162,12 @@ type ClusterManagerService interface {
 	GetCloudRegionZones(ctx context.Context, in *GetCloudRegionZonesRequest, opts ...client.CallOption) (*GetCloudRegionZonesResponse, error)
 	ListCloudRegionCluster(ctx context.Context, in *ListCloudRegionClusterRequest, opts ...client.CallOption) (*ListCloudRegionClusterResponse, error)
 	ListCloudVpcs(ctx context.Context, in *ListCloudVpcsRequest, opts ...client.CallOption) (*ListCloudVpcsResponse, error)
+	ListCloudVpcsPage(ctx context.Context, in *ListCloudVpcsPageRequest, opts ...client.CallOption) (*ListCloudVpcsPageResponse, error)
 	CheckCidrConflictFromVpc(ctx context.Context, in *CheckCidrConflictFromVpcRequest, opts ...client.CallOption) (*CheckCidrConflictFromVpcResponse, error)
 	ListCloudSubnets(ctx context.Context, in *ListCloudSubnetsRequest, opts ...client.CallOption) (*ListCloudSubnetsResponse, error)
+	CreateCloudSubnets(ctx context.Context, in *CreateCloudSubnetsRequest, opts ...client.CallOption) (*CreateCloudSubnetsResponse, error)
+	UpdateCloudSubnets(ctx context.Context, in *UpdateCloudSubnetsRequest, opts ...client.CallOption) (*UpdateCloudSubnetsResponse, error)
+	DeleteCloudSubnets(ctx context.Context, in *DeleteCloudSubnetsRequest, opts ...client.CallOption) (*DeleteCloudSubnetsResponse, error)
 	ListCloudSecurityGroups(ctx context.Context, in *ListCloudSecurityGroupsRequest, opts ...client.CallOption) (*ListCloudSecurityGroupsResponse, error)
 	ListKeypairs(ctx context.Context, in *ListKeyPairsRequest, opts ...client.CallOption) (*ListKeyPairsResponse, error)
 	ListCloudInstanceTypes(ctx context.Context, in *ListCloudInstanceTypeRequest, opts ...client.CallOption) (*ListCloudInstanceTypeResponse, error)
@@ -2385,6 +2413,16 @@ func (c *clusterManagerService) ListCloudVpcs(ctx context.Context, in *ListCloud
 	return out, nil
 }
 
+func (c *clusterManagerService) ListCloudVpcsPage(ctx context.Context, in *ListCloudVpcsPageRequest, opts ...client.CallOption) (*ListCloudVpcsPageResponse, error) {
+	req := c.c.NewRequest(c.name, "ClusterManager.ListCloudVpcsPage", in)
+	out := new(ListCloudVpcsPageResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *clusterManagerService) CheckCidrConflictFromVpc(ctx context.Context, in *CheckCidrConflictFromVpcRequest, opts ...client.CallOption) (*CheckCidrConflictFromVpcResponse, error) {
 	req := c.c.NewRequest(c.name, "ClusterManager.CheckCidrConflictFromVpc", in)
 	out := new(CheckCidrConflictFromVpcResponse)
@@ -2398,6 +2436,36 @@ func (c *clusterManagerService) CheckCidrConflictFromVpc(ctx context.Context, in
 func (c *clusterManagerService) ListCloudSubnets(ctx context.Context, in *ListCloudSubnetsRequest, opts ...client.CallOption) (*ListCloudSubnetsResponse, error) {
 	req := c.c.NewRequest(c.name, "ClusterManager.ListCloudSubnets", in)
 	out := new(ListCloudSubnetsResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterManagerService) CreateCloudSubnets(ctx context.Context, in *CreateCloudSubnetsRequest, opts ...client.CallOption) (*CreateCloudSubnetsResponse, error) {
+	req := c.c.NewRequest(c.name, "ClusterManager.CreateCloudSubnets", in)
+	out := new(CreateCloudSubnetsResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterManagerService) UpdateCloudSubnets(ctx context.Context, in *UpdateCloudSubnetsRequest, opts ...client.CallOption) (*UpdateCloudSubnetsResponse, error) {
+	req := c.c.NewRequest(c.name, "ClusterManager.UpdateCloudSubnets", in)
+	out := new(UpdateCloudSubnetsResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterManagerService) DeleteCloudSubnets(ctx context.Context, in *DeleteCloudSubnetsRequest, opts ...client.CallOption) (*DeleteCloudSubnetsResponse, error) {
+	req := c.c.NewRequest(c.name, "ClusterManager.DeleteCloudSubnets", in)
+	out := new(DeleteCloudSubnetsResponse)
 	err := c.c.Call(ctx, req, out, opts...)
 	if err != nil {
 		return nil, err
@@ -2958,8 +3026,12 @@ type ClusterManagerHandler interface {
 	GetCloudRegionZones(context.Context, *GetCloudRegionZonesRequest, *GetCloudRegionZonesResponse) error
 	ListCloudRegionCluster(context.Context, *ListCloudRegionClusterRequest, *ListCloudRegionClusterResponse) error
 	ListCloudVpcs(context.Context, *ListCloudVpcsRequest, *ListCloudVpcsResponse) error
+	ListCloudVpcsPage(context.Context, *ListCloudVpcsPageRequest, *ListCloudVpcsPageResponse) error
 	CheckCidrConflictFromVpc(context.Context, *CheckCidrConflictFromVpcRequest, *CheckCidrConflictFromVpcResponse) error
 	ListCloudSubnets(context.Context, *ListCloudSubnetsRequest, *ListCloudSubnetsResponse) error
+	CreateCloudSubnets(context.Context, *CreateCloudSubnetsRequest, *CreateCloudSubnetsResponse) error
+	UpdateCloudSubnets(context.Context, *UpdateCloudSubnetsRequest, *UpdateCloudSubnetsResponse) error
+	DeleteCloudSubnets(context.Context, *DeleteCloudSubnetsRequest, *DeleteCloudSubnetsResponse) error
 	ListCloudSecurityGroups(context.Context, *ListCloudSecurityGroupsRequest, *ListCloudSecurityGroupsResponse) error
 	ListKeypairs(context.Context, *ListKeyPairsRequest, *ListKeyPairsResponse) error
 	ListCloudInstanceTypes(context.Context, *ListCloudInstanceTypeRequest, *ListCloudInstanceTypeResponse) error
@@ -3142,8 +3214,12 @@ func RegisterClusterManagerHandler(s server.Server, hdlr ClusterManagerHandler, 
 		GetCloudRegionZones(ctx context.Context, in *GetCloudRegionZonesRequest, out *GetCloudRegionZonesResponse) error
 		ListCloudRegionCluster(ctx context.Context, in *ListCloudRegionClusterRequest, out *ListCloudRegionClusterResponse) error
 		ListCloudVpcs(ctx context.Context, in *ListCloudVpcsRequest, out *ListCloudVpcsResponse) error
+		ListCloudVpcsPage(ctx context.Context, in *ListCloudVpcsPageRequest, out *ListCloudVpcsPageResponse) error
 		CheckCidrConflictFromVpc(ctx context.Context, in *CheckCidrConflictFromVpcRequest, out *CheckCidrConflictFromVpcResponse) error
 		ListCloudSubnets(ctx context.Context, in *ListCloudSubnetsRequest, out *ListCloudSubnetsResponse) error
+		CreateCloudSubnets(ctx context.Context, in *CreateCloudSubnetsRequest, out *CreateCloudSubnetsResponse) error
+		UpdateCloudSubnets(ctx context.Context, in *UpdateCloudSubnetsRequest, out *UpdateCloudSubnetsResponse) error
+		DeleteCloudSubnets(ctx context.Context, in *DeleteCloudSubnetsRequest, out *DeleteCloudSubnetsResponse) error
 		ListCloudSecurityGroups(ctx context.Context, in *ListCloudSecurityGroupsRequest, out *ListCloudSecurityGroupsResponse) error
 		ListKeypairs(ctx context.Context, in *ListKeyPairsRequest, out *ListKeyPairsResponse) error
 		ListCloudInstanceTypes(ctx context.Context, in *ListCloudInstanceTypeRequest, out *ListCloudInstanceTypeResponse) error
@@ -3894,6 +3970,12 @@ func RegisterClusterManagerHandler(s server.Server, hdlr ClusterManagerHandler, 
 		Handler: "rpc",
 	}))
 	opts = append(opts, api.WithEndpoint(&api.Endpoint{
+		Name:    "ClusterManager.ListCloudVpcsPage",
+		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/page"},
+		Method:  []string{"GET"},
+		Handler: "rpc",
+	}))
+	opts = append(opts, api.WithEndpoint(&api.Endpoint{
 		Name:    "ClusterManager.CheckCidrConflictFromVpc",
 		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/{vpcId}/cidrconflict"},
 		Method:  []string{"GET"},
@@ -3903,6 +3985,24 @@ func RegisterClusterManagerHandler(s server.Server, hdlr ClusterManagerHandler, 
 		Name:    "ClusterManager.ListCloudSubnets",
 		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets"},
 		Method:  []string{"GET"},
+		Handler: "rpc",
+	}))
+	opts = append(opts, api.WithEndpoint(&api.Endpoint{
+		Name:    "ClusterManager.CreateCloudSubnets",
+		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/vpcs/{vpcID}"},
+		Method:  []string{"POST"},
+		Handler: "rpc",
+	}))
+	opts = append(opts, api.WithEndpoint(&api.Endpoint{
+		Name:    "ClusterManager.UpdateCloudSubnets",
+		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets/{subnetID}"},
+		Method:  []string{"PUT"},
+		Handler: "rpc",
+	}))
+	opts = append(opts, api.WithEndpoint(&api.Endpoint{
+		Name:    "ClusterManager.DeleteCloudSubnets",
+		Path:    []string{"/clustermanager/v1/clouds/{cloudID}/subnets/{subnetID}"},
+		Method:  []string{"DELETE"},
 		Handler: "rpc",
 	}))
 	opts = append(opts, api.WithEndpoint(&api.Endpoint{
@@ -4632,12 +4732,28 @@ func (h *clusterManagerHandler) ListCloudVpcs(ctx context.Context, in *ListCloud
 	return h.ClusterManagerHandler.ListCloudVpcs(ctx, in, out)
 }
 
+func (h *clusterManagerHandler) ListCloudVpcsPage(ctx context.Context, in *ListCloudVpcsPageRequest, out *ListCloudVpcsPageResponse) error {
+	return h.ClusterManagerHandler.ListCloudVpcsPage(ctx, in, out)
+}
+
 func (h *clusterManagerHandler) CheckCidrConflictFromVpc(ctx context.Context, in *CheckCidrConflictFromVpcRequest, out *CheckCidrConflictFromVpcResponse) error {
 	return h.ClusterManagerHandler.CheckCidrConflictFromVpc(ctx, in, out)
 }
 
 func (h *clusterManagerHandler) ListCloudSubnets(ctx context.Context, in *ListCloudSubnetsRequest, out *ListCloudSubnetsResponse) error {
 	return h.ClusterManagerHandler.ListCloudSubnets(ctx, in, out)
+}
+
+func (h *clusterManagerHandler) CreateCloudSubnets(ctx context.Context, in *CreateCloudSubnetsRequest, out *CreateCloudSubnetsResponse) error {
+	return h.ClusterManagerHandler.CreateCloudSubnets(ctx, in, out)
+}
+
+func (h *clusterManagerHandler) UpdateCloudSubnets(ctx context.Context, in *UpdateCloudSubnetsRequest, out *UpdateCloudSubnetsResponse) error {
+	return h.ClusterManagerHandler.UpdateCloudSubnets(ctx, in, out)
+}
+
+func (h *clusterManagerHandler) DeleteCloudSubnets(ctx context.Context, in *DeleteCloudSubnetsRequest, out *DeleteCloudSubnetsResponse) error {
+	return h.ClusterManagerHandler.DeleteCloudSubnets(ctx, in, out)
 }
 
 func (h *clusterManagerHandler) ListCloudSecurityGroups(ctx context.Context, in *ListCloudSecurityGroupsRequest, out *ListCloudSecurityGroupsResponse) error {
