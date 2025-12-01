@@ -129,3 +129,19 @@ func GetIPNetsNum(frees []*net.IPNet) (uint32, error) {
 
 	return ipSurplus, nil
 }
+
+// VpcInfo vpc info
+type VpcInfo struct {
+	AvailableIpAddressCount int64         `json:"availableIpAddressCount,omitempty"`
+	TotalIpAddressCount     int64         `json:"totalIpAddressCount,omitempty"`
+	AvailableCidrBlock      []string      `json:"availableCidrBlock,omitempty"`
+	CidrBlock               []string      `json:"cidrBlock,omitempty"`
+	SubnetUsed              []*SubnetUsed `json:"subnetUsed,omitempty"`
+}
+
+// SubnetUsed subnet used info
+type SubnetUsed struct {
+	SubnetCidrBlock         string `json:"subnetCidrBlock,omitempty"`
+	AvailableIpAddressCount int64  `json:"availableIpAddressCount,omitempty"`
+	TotalIpAddressCount     int64  `json:"totalIpAddressCount,omitempty"`
+}

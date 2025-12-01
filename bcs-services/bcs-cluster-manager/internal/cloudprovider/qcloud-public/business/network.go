@@ -82,6 +82,42 @@ func GetVpcCIDRBlocks(opt *cloudprovider.CommonOption, vpcId string, assistantTy
 
 }
 
+// GetVpcOverlayCIDRAndIpNum 获取vpc voerlay所属的cidr段及ip num
+func GetVpcOverlayCIDRAndIpNum(
+	opt *cloudprovider.CommonOption, vpcId string) (*cidrtree.VpcInfo, error) {
+	vpcCli, err := api.NewVPCClient(opt)
+	if err != nil {
+		return nil, err
+	}
+
+	vpcSet, err := vpcCli.DescribeVpcs([]string{vpcId}, nil)
+	if err != nil {
+		return nil, err
+	}
+	if len(vpcSet) == 0 {
+		return nil, fmt.Errorf("GetVpcCIDRBlocks DescribeVpcs[%s] empty", vpcId)
+	}
+
+	var vsi = &cidrtree.VpcInfo{}
+
+	for _, v := range vpcSet[0].AssistantCidrSet {
+		if v.AssistantType != nil && int(*v.AssistantType) == 1 && v.CidrBlock != nil {
+			for _, subnet := range v.SubnetSet {
+				vsi.AvailableIpAddressCount += utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount)
+				vsi.TotalIpAddressCount += utils.Uint64PtrToInt64(subnet.TotalIpAddressCount)
+				vsi.SubnetUsed = append(vsi.SubnetUsed, &cidrtree.SubnetUsed{
+					SubnetCidrBlock:         utils.StringPtrToString(subnet.CidrBlock),
+					AvailableIpAddressCount: utils.Uint64PtrToInt64(subnet.AvailableIpAddressCount),
+					TotalIpAddressCount:     utils.Uint64PtrToInt64(subnet.TotalIpAddressCount),
+				})
+			}
+		}
+	}
+
+	return vsi, nil
+
+}
+
 // GetAllocatedSubnetsByVpc 获取vpc已分配的子网cidr段
 func GetAllocatedSubnetsByVpc(opt *cloudprovider.CommonOption, vpcId string) ([]*net.IPNet, error) {
 	vpcCli, err := api.NewVPCClient(opt)
