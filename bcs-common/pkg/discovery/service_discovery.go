@@ -105,6 +105,8 @@ const (
 	ZookeeperHeadlessServiceName = "bcs-zookeeper-headless"
 	// ThirdpartyServiceName thirdparty 服务名称
 	ThirdpartyServiceName = "bcs-thirdparty-service"
+	// PushManagerServiceName push manager 服务名称
+	PushManagerServiceName = "bcs-push-manager"
 
 	// 服务的端口
 
